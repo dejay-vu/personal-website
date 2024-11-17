@@ -12,7 +12,7 @@ export default function Home() {
           <Greetings />
 
           <p className={textStyles}>
-            I&apos;m Junhao Zhang (张俊豪), but you can call me Jayz because it
+            I&apos;m Junhao Zhang (张俊豪), but you can call me Jay because it
             sounds cooler and it&apos;s easier to remember. I&apos;m a Machine
             Learning Software Engineer who geeks out over GPU programming and
             advanced computing systems. My superpower? Making computers think
