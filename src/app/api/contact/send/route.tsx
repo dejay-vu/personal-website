@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
 
     // send the user's message to me
     const { error } = await resend.emails.send({
-      from: 'Howie Jayz <contact@howiejayz.com>',
-      to: ['howiejayzh@gmail.com'],
+      from: 'Dejay vu <contact@dejayvu.com>',
+      to: ['junhao.zhang2301@gmail.com'],
       reply_to: email,
       subject: `New message from ${name || 'Anonymous'}`,
       react: <EmailToMe userEmail={email} userMessage={message} />,
@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     }
     // send feedback to the user
     const _ = resend.emails.send({
-      from: 'Howie Jayz <contact@howiejayz.com>',
+      from: 'Dejay vu <contact@dejayvu.com>',
       to: [email],
-      reply_to: 'howiejayzh@gmail.com',
+      reply_to: 'junhao.zhang2301@gmail.com',
       subject: userSubject,
       react: <EmailToUser userName={name} userMessage={message} />,
     });
