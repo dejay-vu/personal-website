@@ -7,7 +7,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'resizer.howiejayz.com',
+        hostname: 'resizer.dejayvu.com',
         port: '',
       },
       {
