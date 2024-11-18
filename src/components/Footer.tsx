@@ -10,7 +10,7 @@ export default function Footer() {
           </div>
           <aside>
             <p className="font-bold">
-              Howie Jayz <br />
+              Junhao Zhang <br />
             </p>
             <p>Copyright © 2024 - All right reserved</p>
           </aside>
