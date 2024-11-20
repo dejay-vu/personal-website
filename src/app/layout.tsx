@@ -13,12 +13,12 @@ import Providers from '@/components/Providers';
 export const metadata: Metadata = {
   title: {
     template: '%s',
-    default: 'Howie Jayz',
+    default: 'DeJay Vu',
   },
   authors: [
     {
-      url: 'https://howiejayz.com',
-      name: 'Howie Jayz',
+      url: 'https://dejayvu.com',
+      name: 'Junhao Zhang',
     },
   ],
   generator: 'nextjs, react',
@@ -26,13 +26,13 @@ export const metadata: Metadata = {
     "I'm a software engineer who loves to build things. I'm passionate about machine learning, photography, and hiking.",
   openGraph: {
     images: {
-      url: 'https://resizer.howiejayz.com/opengraph-image.png?format=auto&quality=75&width=640',
+      url: 'https://resizer.dejayvu.com/opengraph?format=auto&quality=75&width=640',
       width: 768,
       height: 403,
-      alt: 'Howie Jayz',
+      alt: 'DeJay Vu',
     },
-    emails: ['howiejayzh@gmail.com'],
-    phoneNumbers: ['+447398126363'],
+    emails: ['junhao.zhang2301@gmail.com'],
+    phoneNumbers: ['+44 7903686710'],
     locale: 'en_US',
     type: 'website',
   },
