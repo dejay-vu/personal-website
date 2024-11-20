@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
     // send feedback to the user
     const _ = resend.emails.send({
-      from: 'Dejay Vu <contact@dejayvu.com>',
+      from: 'DeJay Vu <contact@dejayvu.com>',
       to: [email],
       reply_to: 'junhao.zhang2301@gmail.com',
       subject: userSubject,
