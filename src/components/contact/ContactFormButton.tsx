@@ -91,7 +91,7 @@ export function ContactFormButton({
     >
       <span className="relative grid size-5 place-items-center">
         <ContactFormButtonIconLayer isActive={iconState === 'pending'}>
-          <Spinner size="sm" color="current" />
+          {pending ? <Spinner size="sm" color="current" /> : null}
         </ContactFormButtonIconLayer>
         <ContactFormButtonIconLayer isActive={iconState === 'success'}>
           <CheckIcon />
