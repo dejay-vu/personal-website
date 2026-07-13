@@ -11,7 +11,6 @@ export const venueSegment = (domain: VenueDomain) =>
 
 export const APP_ROUTES = {
   home: '/',
-  contact: '/contact',
 } as const;
 
 const itemPath = (base: string, slug: string) => `${base}/${slug}`;

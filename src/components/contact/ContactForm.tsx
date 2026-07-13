@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 
-import { sendContactMessage } from '@/app/contact/actions';
+import { sendContactMessage } from '@/modules/contact/actions';
 import { Fieldset, Form } from '@heroui/react';
 
 import {

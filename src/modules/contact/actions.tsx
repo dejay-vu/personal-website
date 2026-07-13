@@ -2,6 +2,8 @@
 
 import { headers } from 'next/headers';
 
+import EmailToMe from '@/app/api/contact/send/EmailToMe';
+import EmailToUser from '@/app/api/contact/send/EmailToUser';
 import { Resend } from 'resend';
 
 import {
@@ -14,9 +16,6 @@ import {
   deleteContactAttachments,
   storeContactAttachments,
 } from '@/services/contactAttachments';
-
-import EmailToMe from '../api/contact/send/EmailToMe';
-import EmailToUser from '../api/contact/send/EmailToUser';
 
 const CONTACT_RATE_LIMIT = {
   maxAttempts: 3,
