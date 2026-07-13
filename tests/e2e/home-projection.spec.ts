@@ -12,7 +12,11 @@ test.beforeEach(async ({ page }) => {
 
 test('unprojected titles and venue links follow the canvas readiness state', async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === 'mobile-chromium',
+    'Touch/mobile uses the in-flow DOM projection instead of the canvas gate.',
+  );
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-neon-fx', '');
 
@@ -35,17 +39,28 @@ test('unprojected titles and venue links follow the canvas readiness state', asy
     ).toBe('none');
     await term.evaluate((node) => node.focus());
     expect(await term.evaluate((node) => node.matches(':focus'))).toBe(false);
+    await expect
+      .poll(() =>
+        term.evaluate((node) =>
+          getComputedStyle(node).gridTemplateRows.endsWith(' 0px'),
+        ),
+      )
+      .toBe(true);
+    const readyCue = term.locator('[data-ready-cue]');
+    await expect(readyCue).toBeHidden();
     expect(
-      await term.evaluate((node) =>
-        getComputedStyle(node).gridTemplateRows.endsWith(' 0px'),
-      ),
-    ).toBe(true);
+      await readyCue.evaluate((node) => Number(getComputedStyle(node).opacity)),
+    ).toBe(0);
   }
 });
 
 test('Street links activate at completion and deactivate on reverse scroll', async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === 'mobile-chromium',
+    'Touch/mobile venue links are immediately available in the static layout.',
+  );
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-neon-fx', '');
 
@@ -78,12 +93,66 @@ test('Street links activate at completion and deactivate on reverse scroll', asy
     ).toBe('auto');
     await term.focus();
     expect(await term.evaluate((node) => node.matches(':focus'))).toBe(true);
+    const readyCue = term.locator('[data-ready-cue]');
+    await expect(readyCue).toBeVisible();
+    expect(
+      await readyCue.evaluate((node) => Number(getComputedStyle(node).opacity)),
+    ).toBeGreaterThan(0.7);
+    expect(
+      await readyCue.evaluate((node) =>
+        Number(getComputedStyle(node.parentElement!).opacity),
+      ),
+    ).toBeGreaterThan(0.9);
   }
 
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    const root = document.documentElement;
+    const previousBehavior = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    root.style.scrollBehavior = previousBehavior;
+  });
   for (const term of await page.locator(venueTerms).all()) {
     await expect(term).not.toHaveAttribute('data-projected', '');
     await expect(term).toHaveAttribute('inert', '');
+    await expect(term.locator('[data-ready-cue]')).toBeHidden();
+  }
+});
+
+test('touch/mobile exposes one selectable, interactive DOM projection', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'mobile-chromium',
+    'The lite projection contract is specific to touch/mobile.',
+  );
+  await page.goto('/');
+
+  await expect(page.locator('html')).not.toHaveAttribute('data-neon-fx', '');
+  await expect(page.locator('div[class*="fx"] canvas')).toHaveCount(0);
+
+  const titles = page.locator(`${sectionSigns}, ${venueNames}`);
+  await expect(titles).toHaveCount(6);
+  for (const title of await titles.all()) {
+    expect(
+      await title.evaluate((node) => getComputedStyle(node).userSelect),
+    ).not.toBe('none');
+    expect(
+      await title.evaluate(
+        (node) => Number(getComputedStyle(node).opacity) > 0,
+      ),
+    ).toBe(true);
+  }
+
+  for (const term of await page.locator(venueTerms).all()) {
+    await expect(term).not.toHaveAttribute('inert', '');
+    expect(
+      await term.evaluate((node) => getComputedStyle(node).pointerEvents),
+    ).toBe('auto');
+    await expect(term.locator('[data-ready-cue]')).toBeVisible();
   }
 });
 
@@ -106,6 +175,14 @@ test('reduced motion exposes the visible static fallback immediately', async ({
     expect(
       await term.evaluate((node) => getComputedStyle(node).pointerEvents),
     ).toBe('auto');
+    await expect(term.locator('[data-ready-cue]')).toBeVisible();
+    expect(
+      await term
+        .locator('[data-ready-cue]')
+        .evaluate((node) =>
+          Number(getComputedStyle(node.parentElement!).opacity),
+        ),
+    ).toBeGreaterThan(0.9);
   }
 });
 
@@ -124,5 +201,6 @@ test('canvas failure releases a restored projection gate', async ({ page }) => {
     expect(
       await term.evaluate((node) => getComputedStyle(node).pointerEvents),
     ).toBe('auto');
+    await expect(term.locator('[data-ready-cue]')).toBeVisible();
   }
 });

@@ -151,9 +151,8 @@
   height: calc(100svh + 100vh);
 }
 
-/* The zone the spine spans. MUST stay transform/filter/overflow-free:
-   the sticky pins inside need the viewport scroller, and the junction's
-   fixed blackout must not gain a transformed containing block. */
+/* The zone the spine spans. Keep it transform/filter/overflow-free so the
+   sticky pins inside continue to use the viewport scroller. */
 /* Symmetric padding: the content field is centred in the viewport, so every
    block (bio, timeline, junction, contact form) shares one symmetric measure
    — the rail lives inside the left padding. */
@@ -191,7 +190,7 @@
 .zone .contactHead {
   justify-content: flex-start;
 }
-@media (max-width: 720px) {
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
   .zone .contactWrap {
     margin-top: 0;
   }
@@ -301,12 +300,54 @@
   align-content: center;
 }
 
-/* small screens: sections are often taller than the viewport, so drop the pin
-   and scroll normally (background parallax + ignite-on-view still apply).
-   The rail hugs the left edge. */
-@media (max-width: 720px) {
+/* Touch/mobile: drop every pin and keep titles in the document's native
+   scrolling layer. The background is static and the fixed HOLO canvas is
+   absent, so compositor scrolling cannot detach titles from their copy. */
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
   .neon {
     --zone-pad: 44px;
+  }
+  :global(html.neon-site):has(.neon) {
+    scroll-behavior: auto;
+  }
+  .bgImage {
+    top: -12px;
+    left: -12px;
+    width: calc(100% + 24px);
+    height: calc(100% + 24px);
+    aspect-ratio: auto;
+    background-position:
+      center center,
+      center center;
+    filter: blur(7px) brightness(0.82) saturate(1.05);
+    opacity: 0.72;
+    transform: none !important;
+    will-change: auto;
+  }
+  .scrim {
+    background: linear-gradient(
+      rgba(4, 3, 16, 0.5) 0%,
+      rgba(4, 3, 16, 0.62) 55%,
+      rgba(4, 3, 16, 0.74) 100%
+    );
+  }
+  .rainNear,
+  .fx {
+    display: none;
+  }
+  .heroTrack {
+    height: auto;
+  }
+  .hero {
+    position: static;
+    height: auto;
+    min-height: 100svh;
+  }
+  .heroCore {
+    will-change: auto;
+  }
+  .heroCore[data-holo] .brand {
+    visibility: visible;
   }
   .track {
     height: auto;
@@ -326,6 +367,7 @@
   }
   .blk {
     padding-block: clamp(56px, 13vw, 88px);
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 64px);
   }
 }
 .head {

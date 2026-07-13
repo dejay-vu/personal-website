@@ -1,11 +1,7 @@
 'use client';
 
-import { type CSSProperties, useEffect, useRef } from 'react';
-
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
-import { VENUES } from '@/config/venues';
 import type { PhotoListItem } from '@/modules/photos/types';
 import { Button, Modal, useOverlayState } from '@heroui/react';
 import clsx from 'clsx';
@@ -15,49 +11,25 @@ import { mediaImageLoader } from '@/lib/media';
 import { XMarkIcon } from '@/components/ui/Icons';
 
 import { getPhotoAltText } from '../photoAlt';
-import { getPhotoDisplayDimensions } from '../photoDimensions';
+import { getPhotoModalFrameStyle } from './photoModalFrame';
+
+export type PhotoModalPhase = 'closed' | 'confirmed' | 'opening';
 
 export function PhotoModal({
+  isOpen,
+  onOpenChange,
+  phase,
   photo,
-  closeHref = VENUES.photos.path,
 }: {
+  isOpen: boolean;
+  onOpenChange(isOpen: boolean): void;
+  phase: PhotoModalPhase;
   photo: PhotoListItem;
-  closeHref?: string;
 }) {
-  const router = useRouter();
-  const { height: displayHeight, width: displayWidth } =
-    getPhotoDisplayDimensions(photo);
-  const aspectRatio = displayWidth / displayHeight;
-  const frameStyle = {
-    aspectRatio: `${displayWidth} / ${displayHeight}`,
-    height: `min(90dvh, ${90 / aspectRatio}vw)`,
-    width: `min(90vw, ${90 * aspectRatio}dvh)`,
-  } satisfies CSSProperties;
-  // useOverlayState fires onOpenChange unconditionally (no change check), so
-  // Esc + close-button in quick succession would navigate back twice.
-  const hasClosedRef = useRef(false);
-
-  useEffect(() => {
-    router.prefetch(closeHref);
-  }, [closeHref, router]);
-
+  const frameStyle = getPhotoModalFrameStyle(photo);
   const state = useOverlayState({
-    defaultOpen: true,
-    onOpenChange(isOpen) {
-      if (!isOpen) {
-        if (hasClosedRef.current) return;
-        hasClosedRef.current = true;
-
-        if (window.history.length > 1) {
-          router.back();
-          return;
-        }
-
-        router.push(closeHref, {
-          scroll: false,
-        });
-      }
-    },
+    isOpen,
+    onOpenChange,
   });
 
   return (
@@ -69,10 +41,18 @@ export function PhotoModal({
       >
         Open photo preview
       </Modal.Trigger>
-      <Modal.Backdrop variant="blur" isDismissable className="bg-background/70">
+      <Modal.Backdrop
+        variant="blur"
+        isDismissable
+        data-photo-modal-phase={phase}
+        data-photo-modal-slug={photo.slug}
+        className="z-[80] bg-background/70"
+      >
         <Modal.Container placement="center">
           <Modal.Dialog
             aria-label="Photo preview"
+            data-photo-modal-phase={phase}
+            data-photo-modal-slug={photo.slug}
             style={{
               ...frameStyle,
               maxHeight: 'none',
@@ -98,9 +78,10 @@ export function PhotoModal({
             <Modal.Body className="h-full w-full overflow-visible p-0">
               <div
                 data-photo-modal-frame
-                className="relative h-full w-full overflow-hidden rounded-lg bg-transparent"
+                className="relative h-full w-full overflow-hidden rounded-lg bg-[#020108]"
               >
                 <Image
+                  data-photo-modal-image
                   fill
                   loader={mediaImageLoader}
                   src={photo.mediaAsset.originalKey}

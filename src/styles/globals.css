@@ -592,8 +592,7 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
   text-shadow: 0 0 8px var(--card-hue, var(--beam));
 }
 
-/* Lightbox tile (gallery). One projection light; the featured 2x2 print
-   just reads brighter (stronger beam border), not a different hue. */
+/* Lightbox tile (gallery). One shared projection light. */
 .neon-tile {
   --card-hue: var(--beam);
   border-radius: 6px;
@@ -606,10 +605,6 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
-}
-
-.neon-tile[data-featured='true'] {
-  border-color: color-mix(in oklab, var(--beam) 70%, transparent);
 }
 
 .neon-tile:focus-within {
@@ -944,9 +939,10 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
    Equal-height photo rows at TRUE aspect ratios (zero cropping):
    within a flex row, grow ∝ ratio and basis ∝ ratio resolve widths
    exactly proportional to each photo's --ar, so height = width/ar
-   is identical across the row. The ::after filler stops the last
-   row from stretching. No min-width by design — a floor would
-   break the equal-height math.
+   is identical across the row. The zero-height ::after item absorbs
+   free space in only the final row, keeping sparse rows near the
+   target height instead of upscaling them across a wide viewport.
+   No min-width by design — a floor would break the equal-height math.
    ============================================================== */
 .neon-justified {
   --jg-base: 12rem;
@@ -978,15 +974,9 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
 
 .neon-justified::after {
   content: '';
-  flex: 1000000 1 0%;
-}
-
-/* Full-width breaker (~every 9th, landscape only): its own row,
-   height-capped by shrinking width — the true ratio is preserved. */
-.neon-justified > [data-breaker='true'] {
-  flex: 1 1 100%;
-  max-width: min(100%, calc(78dvh * var(--ar, 1.5)));
-  margin-inline: auto;
+  flex: 1000000 1 0;
+  height: 0;
+  min-width: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

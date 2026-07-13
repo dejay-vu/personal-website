@@ -1,12 +1,21 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
+import {
+  DESKTOP_FX_MEDIA_QUERY,
+  MOBILE_LITE_MEDIA_QUERY,
+} from '@/config/media';
 import type { NoteListItem } from '@/modules/notes/types';
 import type { PhotoListItem } from '@/modules/photos/types';
 import { useGSAP } from '@gsap/react';
 
 import { CjkDisplayFont, DisplayFont } from '@/styles/fonts';
+
+import {
+  clearHomeGateReturn,
+  getHomeGateScrollRestore,
+} from '@/lib/homeGateReturn';
 
 import { ContactForm } from '@/components/contact';
 import { NeonWordmark } from '@/components/ui';
@@ -21,7 +30,7 @@ import { initNeonScroll } from './neonScroll';
 
 type NeonLandingProps = {
   // Previews live at the neon-spine junction (latest note titles run the
-  // Field Notes marquee, latest three photos hang in the Darkroom row) —
+  // Field Notes marquee, latest photos run through the Darkroom row) —
   // the full feeds live on /field-notes and /darkroom, entered via the branches.
   notes: NoteListItem[];
   photos: PhotoListItem[];
@@ -128,48 +137,112 @@ export function NeonLanding({
   // frames through this ref once (and if) it mounts.
   const fxHostRef = useRef<HTMLDivElement>(null);
   const holoRef = useRef<HoloHandle | null>(null);
+  const gateScrollRestoreRef = useRef<number | null | undefined>(undefined);
 
-  // Rain (far + near depth layers).
+  useLayoutEffect(() => {
+    if (gateScrollRestoreRef.current === undefined) {
+      gateScrollRestoreRef.current = getHomeGateScrollRestore();
+    }
+    const scrollY = gateScrollRestoreRef.current;
+    if (scrollY === null) return;
+
+    const root = document.documentElement;
+    const previousBehavior = root.style.scrollBehavior;
+    const restore = () => {
+      root.style.scrollBehavior = 'auto';
+      window.scrollTo(0, scrollY);
+      root.style.scrollBehavior = previousBehavior;
+    };
+
+    // Next applies its own history scroll after the route commits. Restore in
+    // the layout phase and for two following frames so its approximation cannot
+    // overwrite the exact position captured at Street departure. The ref keeps
+    // the value across React's development Strict Mode effect replay; storage is
+    // cleared only after the stable restore actually completes.
+    restore();
+    let settleFrame = 0;
+    const restoreFrame = window.requestAnimationFrame(() => {
+      restore();
+      settleFrame = window.requestAnimationFrame(() => {
+        restore();
+        clearHomeGateReturn();
+        gateScrollRestoreRef.current = null;
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(restoreFrame);
+      window.cancelAnimationFrame(settleFrame);
+    };
+  }, []);
+
+  // Rain (far + near depth layers). Phones keep one low-resolution, 24fps
+  // layer; reduced motion keeps both canvases still and empty.
   useEffect(() => {
-    const reduce = window.matchMedia(
-      '(prefers-reduced-motion: reduce)',
-    ).matches;
-    const cleanups: Array<() => void> = [];
-    if (rainFarRef.current) {
-      cleanups.push(
-        startRain(
-          rainFarRef.current,
-          {
-            count: 260,
+    const far = rainFarRef.current;
+    const near = rainNearRef.current;
+    if (!far || !near) return;
+
+    const mobileLite = window.matchMedia(MOBILE_LITE_MEDIA_QUERY);
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let cleanups: Array<() => void> = [];
+
+    const stop = () => {
+      cleanups.forEach((cleanup) => cleanup());
+      cleanups = [];
+    };
+    const start = () => {
+      stop();
+      if (reducedMotion.matches) return;
+
+      if (mobileLite.matches) {
+        cleanups.push(
+          startRain(far, {
+            count: 64,
             speed: 9,
             len: 16,
-            width: 1.1,
-            alpha: 0.5,
+            width: 1,
+            alpha: 0.38,
             wind: 0.18,
-            tint: 0.1,
-          },
-          reduce,
-        ),
-      );
-    }
-    if (rainNearRef.current) {
+            tint: 0.08,
+            maxDpr: 1,
+            maxFps: 24,
+            ignoreSmallHeightResizes: true,
+          }),
+        );
+        return;
+      }
+
       cleanups.push(
-        startRain(
-          rainNearRef.current,
-          {
-            count: 55,
-            speed: 18,
-            len: 42,
-            width: 2.4,
-            alpha: 0.28,
-            wind: 0.22,
-            tint: 0.16,
-          },
-          reduce,
-        ),
+        startRain(far, {
+          count: 260,
+          speed: 9,
+          len: 16,
+          width: 1.1,
+          alpha: 0.5,
+          wind: 0.18,
+          tint: 0.1,
+        }),
+        startRain(near, {
+          count: 55,
+          speed: 18,
+          len: 42,
+          width: 2.4,
+          alpha: 0.28,
+          wind: 0.22,
+          tint: 0.16,
+        }),
       );
-    }
-    return () => cleanups.forEach((fn) => fn());
+    };
+
+    start();
+    mobileLite.addEventListener('change', start);
+    reducedMotion.addEventListener('change', start);
+    return () => {
+      mobileLite.removeEventListener('change', start);
+      reducedMotion.removeEventListener('change', start);
+      stop();
+    };
   }, []);
 
   // Active HUD sector link. The current id is mirrored onto
@@ -235,7 +308,9 @@ export function NeonLanding({
       if (!a) return;
       const id = a.dataset.navlink;
       if (id !== 'about' && id !== 'timeline' && id !== 'street') return;
-      if (window.innerWidth <= 720) return; // unpinned: native anchor is right
+      if (window.matchMedia(MOBILE_LITE_MEDIA_QUERY).matches) return;
+      // The mobile/coarse-pointer layout is unpinned, so its native anchor is
+      // already the right destination. Desktop jumps to the track release.
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const track = document
         .getElementById(id)
@@ -296,15 +371,15 @@ export function NeonLanding({
     { scope: rootRef },
   );
 
-  // The HOLO canvas layer (see neonHolo.ts). Loaded lazily and only where
-  // motion is allowed — the DOM stays the visible state until the layer can
-  // draw the real font, and remains the reduced-motion experience.
+  // The HOLO canvas is desktop-only. Coarse-pointer/mobile devices keep the
+  // DOM titles in flow, eliminating the compositor-vs-main-thread lag that
+  // made titles detach from their copy while touch scrolling.
   useEffect(() => {
     const host = fxHostRef.current;
     const heroCore = heroCoreRef.current;
     const root = rootRef.current;
     if (!host || !heroCore || !root) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const desktopFx = window.matchMedia(DESKTOP_FX_MEDIA_QUERY);
     const letters = Array.from(
       heroCore.querySelectorAll<HTMLElement>('.neon-wordmark__letter'),
     );
@@ -321,24 +396,45 @@ export function NeonLanding({
       .forEach((name, i) => {
         if (i <= 2) signEls[`street${i}`] = name;
       });
-    const narrow = window.innerWidth <= 720;
     let disposed = false;
     let handle: HoloHandle | null = null;
-    import('./neonHolo')
-      .then((mod) => {
-        if (disposed) return;
-        handle = mod.createHolo(host, {
-          heroLetterEls: letters,
-          signEls,
-          narrow,
+    let generation = 0;
+
+    const sync = () => {
+      generation += 1;
+      const currentGeneration = generation;
+      handle?.destroy();
+      handle = null;
+      holoRef.current = null;
+      if (!desktopFx.matches) return;
+
+      import('./neonHolo')
+        .then((mod) => {
+          if (
+            disposed ||
+            currentGeneration !== generation ||
+            !desktopFx.matches
+          ) {
+            return;
+          }
+          handle = mod.createHolo(host, {
+            heroLetterEls: letters,
+            signEls,
+            narrow: false,
+          });
+          holoRef.current = handle;
+        })
+        .catch(() => {
+          // Import failure → the DOM stays fully lit; scrolling still works.
         });
-        holoRef.current = handle;
-      })
-      .catch(() => {
-        // Import failure → the DOM stays fully lit; scrolling still works.
-      });
+    };
+
+    sync();
+    desktopFx.addEventListener('change', sync);
     return () => {
       disposed = true;
+      generation += 1;
+      desktopFx.removeEventListener('change', sync);
       holoRef.current = null;
       handle?.destroy();
     };
@@ -371,8 +467,8 @@ export function NeonLanding({
             that withdraw upward (chromatic fringes, registration jitter);
             scrolling back reassembles it. At rest the DOM wordmark IS the
             mark — the canvas takes over only once scroll moves. */}
-        <div ref={heroTrackRef} className={styles.heroTrack}>
-          <header className={styles.hero} id="home">
+        <div ref={heroTrackRef} className={styles.heroTrack} id="home">
+          <header className={styles.hero}>
             <div ref={heroCoreRef} className={styles.heroCore}>
               <div className={styles.brand} aria-label="DeJayVu">
                 <NeonWordmark />

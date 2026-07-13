@@ -1,10 +1,10 @@
-import Link from 'next/link';
-
 import { notePath } from '@/config/venues';
 import type { NoteListItem } from '@/modules/notes/types';
 import clsx from 'clsx';
 
 import { toDate } from '@/lib/date';
+
+import { RouteLink } from '@/components/ui/RouteLink';
 
 import { NoteCategories, NoteCoverImage, NoteTitle } from './';
 
@@ -27,9 +27,10 @@ export function NoteCard({
     <article
       className={clsx('neon-card min-w-0', feature && 'md:col-span-full')}
     >
-      <Link
+      <RouteLink
         href={notePath(note.slug)}
         aria-label={note.title}
+        progressLabel="Loading note"
         className={clsx(
           'flex h-full min-h-130 flex-col p-3 outline-(--card-hue) focus-visible:outline-2 focus-visible:-outline-offset-2 sm:p-4',
           feature &&
@@ -91,7 +92,7 @@ export function NoteCard({
             </div>
           </div>
         </div>
-      </Link>
+      </RouteLink>
     </article>
   );
 }

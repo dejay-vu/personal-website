@@ -31,6 +31,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isHome = segments.length === 0;
   const isAdmin = section === 'admin';
   const showChrome = !isHome;
+  const isVenueList =
+    !sub && Object.values(VENUES).some(({ path }) => section === path.slice(1));
 
   // On a detail page (section + a sub-segment) the return goes up to its venue
   // list; on a list/other page it goes to the gate (home).
@@ -63,7 +65,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         (isAdmin ? (
           <NeonTopStrip backHref={APP_ROUTES.home} backLabel="HOME" />
         ) : (
-          <HoloReturn href={back.href} label={back.label} />
+          <HoloReturn
+            href={back.href}
+            label={back.label}
+            restoreHomeScroll={isVenueList}
+          />
         ))}
       <main
         className={

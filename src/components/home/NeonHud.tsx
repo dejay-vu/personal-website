@@ -35,7 +35,11 @@ export function NeonHud() {
       <ul className={styles.links}>
         {SECTORS.map((s) => (
           <li key={s.id}>
-            <a href={`#${s.id}`} data-navlink={s.id}>
+            <a
+              href={`#${s.id}`}
+              data-navlink={s.id}
+              aria-label={`${s.code} ${s.name}`}
+            >
               <b>{s.code}</b>
               <span>{s.name}</span>
             </a>

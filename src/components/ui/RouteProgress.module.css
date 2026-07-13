@@ -1,0 +1,46 @@
+.track {
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in oklab, var(--beam) 14%, transparent);
+  box-shadow: 0 1px 8px color-mix(in oklab, var(--beam) 22%, transparent);
+}
+
+.bar {
+  display: block;
+  width: 42%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--mag) 24%,
+    var(--neon-ink) 52%,
+    var(--cyan) 78%,
+    transparent
+  );
+  box-shadow:
+    0 0 9px var(--beam),
+    0 0 16px color-mix(in oklab, var(--cyan) 35%, transparent);
+  transform: translateX(-120%);
+  animation: route-progress 900ms cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+@keyframes route-progress {
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    width: 100%;
+    animation: none;
+    transform: none;
+  }
+}

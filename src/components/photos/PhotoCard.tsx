@@ -1,13 +1,13 @@
 import type { CSSProperties } from 'react';
 
 import Image from 'next/image';
-import Link from 'next/link';
 
 import type { PhotoListItem } from '@/modules/photos/types';
 import clsx from 'clsx';
 
 import { mediaImageLoader } from '@/lib/media';
 
+import { PhotoModalLink } from './modal/PhotoModalLink';
 import {
   getPhotoAltText,
   getPhotoDisplayTitle,
@@ -15,20 +15,16 @@ import {
 } from './photoAlt';
 
 export function PhotoCard({
-  breaker = false,
   className,
   eager = false,
-  featured = false,
   href,
   photo,
   priority = false,
   sizes = '(max-width: 768px) 84vw, (max-width: 1280px) 42vw, 28vw',
   style,
 }: {
-  breaker?: boolean;
   className?: string;
   eager?: boolean;
-  featured?: boolean;
   href: string;
   photo: PhotoListItem;
   priority?: boolean;
@@ -41,16 +37,11 @@ export function PhotoCard({
   const exif = getPhotoExifSummary(photo, { compact: true });
 
   return (
-    <article
-      className={clsx('neon-tile min-w-0', className)}
-      data-featured={featured || undefined}
-      data-breaker={breaker || undefined}
-      style={style}
-    >
-      <Link
+    <article className={clsx('neon-tile min-w-0', className)} style={style}>
+      <PhotoModalLink
         href={href}
-        scroll={false}
-        aria-label={getPhotoAltText(photo)}
+        ariaLabel={getPhotoAltText(photo)}
+        photo={photo}
         className="group block h-full outline-(--card-hue) focus-visible:outline-2 focus-visible:-outline-offset-2"
       >
         <div
@@ -89,7 +80,7 @@ export function PhotoCard({
             </div>
           )}
         </div>
-      </Link>
+      </PhotoModalLink>
     </article>
   );
 }

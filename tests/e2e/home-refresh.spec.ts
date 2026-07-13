@@ -84,7 +84,11 @@ test('background discovery does not wait for stylesheet completion', async ({
 
 test('HUD fallback reserves stable geometry without wrapping', async ({
   browser,
-}) => {
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === 'mobile-chromium',
+    'The mobile HUD is intentionally hidden; desktop covers fallback geometry.',
+  );
   const context = await browser.newContext({
     javaScriptEnabled: false,
     viewport: { width: 1440, height: 900 },
@@ -207,6 +211,10 @@ test('hard refresh has no unrelated intermediate compositor frame', async ({
 test('retained-scroll refresh restores scroll and parallax before sampling', async ({
   page,
 }, testInfo) => {
+  test.skip(
+    testInfo.project.name === 'mobile-chromium',
+    'Touch/mobile keeps the background static; scroll retention is covered by the mobile runtime suite.',
+  );
   await maskAnimatedCanvases(page);
   await page.goto('/');
   await expect
@@ -425,10 +433,22 @@ test('an unresolved homepage navigation retains the current document', async ({
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
       'The Lab',
     );
-    await expect(page.getByRole('progressbar')).toHaveCount(0);
+    const progress = page.getByRole('progressbar', { name: 'Loading gate' });
+    await expect(progress).toBeVisible();
+    expect(
+      await progress.evaluate((node) => {
+        const bounds = node.getBoundingClientRect();
+        return {
+          height: bounds.height,
+          position: getComputedStyle(node).position,
+          top: bounds.top,
+        };
+      }),
+    ).toEqual({ height: 3, position: 'fixed', top: 0 });
   } finally {
     releaseHomepage();
   }
   await click;
   await expect(page).toHaveURL(/\/$/);
+  await expect(page.locator('[data-route-progress]')).toHaveCount(0);
 });

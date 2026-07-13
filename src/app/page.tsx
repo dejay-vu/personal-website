@@ -9,7 +9,7 @@ import { JsonLd } from '@/components/JsonLd';
 import { NeonLanding } from '@/components/home';
 
 // The single page previews the feeds at the neon-spine junction (latest
-// note titles run the Field Notes marquee, latest three photos hang in the
+// note titles run the Field Notes marquee, latest photos run through the
 // Darkroom row) and enters the full /field-notes and /darkroom pages (endless
 // scroll, search, filters) through the branch signs. Statically rendered +
 // revalidated hourly; underlying reads are unstable_cache'd on the
@@ -19,8 +19,9 @@ export const revalidate = 3600;
 
 // The Field Notes marquee cycles the three latest note titles.
 const HOME_NOTES_PREVIEW = 3;
-// The Darkroom row hangs the latest three prints.
-const HOME_PHOTOS_PREVIEW = 3;
+// A longer unique sequence keeps the duplicated seamless-loop group outside
+// the viewport instead of showing the same three prints side by side.
+const HOME_PHOTOS_PREVIEW = 9;
 
 export default async function Home() {
   preload('/background.webp', {
