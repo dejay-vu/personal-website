@@ -1,0 +1,66 @@
+name: Production Database Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-database
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - name: Reject private/local material
+        run: node scripts/check-public-tree.mjs
+      - name: Validate migration history
+        run: node scripts/check-migration-history.mjs
+      - run: corepack npm ci
+      - name: Generate Prisma Client without production credentials
+        env:
+          POSTGRES_URL_NON_POOLING: postgresql://unused:unused@127.0.0.1:5432/unused
+        run: corepack npm exec -- prisma generate
+      - name: Mask production database identity in logs
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+        run: corepack npm run db:mask-logs
+      - name: Verify production target and migration ledger
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          PRODUCTION_DATABASE_FINGERPRINT: ${{ secrets.PRODUCTION_DATABASE_FINGERPRINT }}
+        run: corepack npm run db:migrate:preflight
+      - name: Apply committed migrations
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          PRODUCTION_DATABASE_FINGERPRINT: ${{ secrets.PRODUCTION_DATABASE_FINGERPRINT }}
+        run: corepack npm run db:migrate:deploy
+      - name: Verify migration status, ledger, and schema drift
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          PRODUCTION_DATABASE_FINGERPRINT: ${{ secrets.PRODUCTION_DATABASE_FINGERPRINT }}
+        run: |
+          corepack npm run db:migrate:status
+          corepack npm run db:migrate:preflight
+          corepack npm run db:migrate:diff
+      - name: Write migration provenance
+        run: corepack npm run db:migration:manifest
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: database-migrations-${{ github.sha }}-${{ github.run_attempt }}
+          path: migration-manifests/migrations.json
+          if-no-files-found: error
+          retention-days: 30

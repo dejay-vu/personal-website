@@ -1,0 +1,78 @@
+name: Audit Published Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-provenance-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  provenance:
+    if: github.repository == 'dejay-vu/personal-website'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: refs/tags/${{ github.event.release.tag_name }}
+      - name: Verify trusted release tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$(git rev-parse HEAD)"
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+          git merge-base --is-ancestor HEAD refs/remotes/origin/main
+      - name: Configure ephemeral evidence paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RELEASE_CDK_TEMPLATE_PATH=$RUNNER_TEMP/release-cdk/ContactAttachmentsStack.template.json"
+            echo "RELEASE_PROVENANCE_PATH=$RUNNER_TEMP/release-provenance.json"
+          } >> "$GITHUB_ENV"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - run: corepack npm ci
+      - run: corepack npm run check:public-tree
+      - run: corepack npm run check:migrations
+      - run: corepack npm run check:aws-contract
+      - name: Synthesize a fresh Contact template
+        run: >-
+          corepack npm run cdk -- synth ContactAttachmentsStack --quiet
+          --output "$RUNNER_TEMP/release-cdk"
+      - name: Generate deterministic provenance
+        run: corepack npm run release:provenance
+      - name: Audit immutable published assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          assets="$RUNNER_TEMP/published-release-assets"
+          mkdir -p "$assets"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'release-provenance.json' --dir "$assets"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'release-verification.json' --dir "$assets"
+          cmp "$RELEASE_PROVENANCE_PATH" "$assets/release-provenance.json"
+          verification="$assets/release-verification.json"
+          test "$(jq -r '.schemaVersion' "$verification")" = '1'
+          test "$(jq -r '.release.tag' "$verification")" = "$RELEASE_TAG"
+          test "$(jq -r '.release.commitSha' "$verification")" = "$(git rev-parse HEAD)"
+          test "$(jq -r '.requiredCi.conclusion' "$verification")" = 'success'
+          test "$(jq -r '.database.migrationStatus' "$verification")" = 'applied'
+          test "$(jq -r '.database.schemaDrift' "$verification")" = 'none'
+          test "$(jq -r '.aws.committedStructureContract' "$verification")" = 'validated'
+          test "$(jq -r '.smoke.status' "$verification")" = 'passed'

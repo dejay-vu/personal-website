@@ -1,0 +1,588 @@
+/* ============================================================
+   Mega Neon — committed dark cyberpunk landing (home only).
+   Scoped CSS Module: class names + @keyframes are local.
+   ============================================================ */
+
+.neon {
+  --mag: #ff2e88;
+  --cyan: #35e6ff;
+  /* the hologram projection tint (the 50/50 blend of the hero's two hues) —
+     every materialised sign burns this colour; --mag/--cyan are its
+     chromatic-aberration channels. neonHolo.ts bakes the same values. */
+  --beam: #9a8ac4;
+  --jade: #5dff9e;
+  --amber: #ffce3a;
+  --neon-ink: #f3ecff;
+  --neon-dim: #9a86c0;
+  --neon-line: rgba(154, 134, 192, 0.18);
+  /* the content offset inside the zone (NeonJunction reads this too) */
+  --zone-pad: clamp(78px, 11vw, 112px);
+
+  position: relative;
+  min-height: 100svh;
+  background: #010417;
+  color: var(--neon-ink);
+  font-family:
+    var(--font-display), var(--font-cjk), 'Arial Narrow', 'PingFang SC',
+    'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+  overflow-x: clip;
+}
+.neon :global(a) {
+  color: inherit;
+  text-decoration: none;
+}
+/* ---------- fixed backdrop layers ---------- */
+/* Flat night-sky fill matching the image's top pixel, so the area above the
+   bottom-anchored photo blends seamlessly upward. */
+/* fixed backdrop wrapper — clips the over-sized image's blur feathering and
+   keeps all bg layers viewport-fixed while content scrolls (sticky) above. */
+.bgFixedWrap {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: clip;
+  pointer-events: none;
+}
+.bg {
+  position: absolute;
+  inset: 0;
+  background: #010417;
+}
+/* User's cyberpunk cityscape, pinned to the PAGE bottom at full width, natural
+   aspect ratio, with a depth-of-field blur so it reads as an out-of-focus
+   backdrop behind the sharp hero content. Slightly over-sized to hide the
+   blur's edge feathering. */
+.bgImage {
+  position: absolute;
+  top: 0;
+  left: -12px;
+  width: calc(100% + 24px);
+  aspect-ratio: 724 / 2172;
+  will-change: transform;
+  /* The tiny embedded preview has the same aspect, crop and treatment as the
+     full cityscape. It paints immediately while the preloaded image decodes,
+     so cold-cache navigation never falls through to the flat sky colour.
+     Sharp: resize width 24, blur 1, WebP quality 35, effort 6. */
+  background-image:
+    url('/background.webp'),
+    url('data:image/webp;base64,UklGRhABAABXRUJQVlA4IAQBAACwBwCdASoYAEgAPwFwr1ArJqQirMlZYCAJZACxHvnyTFNOydDO2YuR2IGxBhStVXGQXjWQ8Q7WopcMSeKJSOrQkEoWmr8AAP7vXxNYyHnTtUFK+bJLEv0iN0GHX/i1kve4ZYip17G2Y09AEqMRDt6M+JRpgJ+l9/TJm1u+ZiDOA9S0ehAmbz1nT0XYbgrwOzjf9Zql1F6zfjGc9dSYESr4nA4V7xAiFGWF+CJ/8W/QF1KklBzn5ZAmQD5+1wRMfN4Z9y9lBfgXwu1WdkfTchHx6nWaUGrGOubS4ZE+r6ee7S4C3+PIyu/CsXwn9rDps8AzkK17mIdPXFVS6G4BwcNyLMggAA==');
+  background-position:
+    center top,
+    center top;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  filter: blur(7px) brightness(0.82) saturate(1.05);
+  /* Pre-hydration parallax offset: the layout.tsx boot script restores the
+     last pan into --neon-bg-y (px) before first paint, so a scrolled refresh
+     doesn't flash the background at the top. GSAP overrides this with an
+     inline transform on the first tick. */
+  transform: translateY(var(--neon-bg-y, 0px));
+}
+/* Legibility scrim — darker toward the brighter lower city. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    rgba(4, 3, 16, 0.32) 0%,
+    rgba(4, 3, 16, 0.46) 55%,
+    rgba(4, 3, 16, 0.6) 100%
+  );
+}
+.rainFar {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.rainNear {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.vig {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 120% at 50% 38%,
+    transparent 56%,
+    rgba(0, 0, 0, 0.66) 100%
+  );
+}
+/* HOLO fx layer: the 2D canvas that assembles/withdraws the sliced
+   holograms. Above the content plane (.main, 3) so the slices ride the
+   glyphs; below near-rain (5) and the vignette (6) so depth reads right. */
+.fx {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.fx canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.main {
+  position: relative;
+  z-index: 3;
+}
+
+/* ==============================================================
+   THE PROJECTION RUN
+   Every title is a hologram drawn ENTIRELY by the canvas layer
+   (neonHolo.ts): horizontal slices, chromatic fringes, registration
+   jitter — assembling as its scroll band plays and holding that
+   living look at rest (no separate DOM steady state). The DOM text
+   is only the pre-canvas / reduced-motion fallback. Section CONTENT
+   (bio, timeline rows, contact) holo-pops in the DOM.
+   ============================================================== */
+/* The hero's scroll track: DEJAYVU pins centred for one viewport of scroll
+   while the canvas peels the mark apart as slices withdrawing upward; the
+   pin releases when the projection is fully withdrawn — then the page
+   scrolls on normally. */
+.heroTrack {
+  height: calc(100svh + 100vh);
+}
+
+/* The zone the spine spans. MUST stay transform/filter/overflow-free:
+   the sticky pins inside need the viewport scroller, and the junction's
+   fixed blackout must not gain a transformed containing block. */
+/* Symmetric padding: the content field is centred in the viewport, so every
+   block (bio, timeline, junction, contact form) shares one symmetric measure
+   — the rail lives inside the left padding. */
+.zone {
+  position: relative;
+  max-width: 1060px;
+  margin: 0 auto;
+  padding-inline: var(--zone-pad);
+}
+
+/* .blk inside the zone: the zone's padding does the horizontal placement,
+   so drop the block's own left padding — the sign's left edge must sit on
+   the zone content edge for the rail tick offset to land on the rail.
+   (Scoped under .zone: this rule precedes .blk in the file, and equal
+   specificity would let .blk's shorthand win.) */
+.zone .zoneBlk {
+  max-width: none;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0; /* the zone's symmetric padding does the horizontal work */
+}
+
+/* Contact hangs on the rail like every other section: the sign sits beside
+   the terminus collar and the form stretches to the SAME zone content width
+   as the timeline and junction rows — one consistent content measure for the
+   whole page. Socials + footer stay centred as the closing signature. */
+.zone .contactWrap {
+  max-width: none;
+  margin: 0;
+  /* Contact isn't pinned, so it has no exit tail — this top margin restores
+     the uniform ~68vh dark-travel from the street release. (Higher
+     specificity than the .contactSection rule, so it lands here.) */
+  margin-top: 36vh;
+}
+.zone .contactHead {
+  justify-content: flex-start;
+}
+@media (max-width: 720px) {
+  .zone .contactWrap {
+    margin-top: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone .contactWrap {
+    margin-top: 0;
+  }
+}
+
+/* ---------- hero wordmark: the master hologram ---------- */
+.brand {
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.9;
+  letter-spacing: 0.03em;
+  font-size: clamp(52px, 15vw, 160px);
+}
+/* Uniform projection light — the mockup's exact hero material (warm white
+   over the --beam glow, chromatic fringe pair), identical to what the
+   canvas bakes so the DOM↔canvas swap is invisible. Overrides the shared
+   .neon-wordmark per-letter hues/flicker (deep pages keep those); dead
+   tubes are gone — every glyph is part of the projection. */
+.brand :global(.neon-wordmark__letter) {
+  -webkit-text-fill-color: rgba(244, 239, 255, 0.96);
+  /* Chroma fringe in the SAME direction as the canvas (magenta left, cyan
+     right) but softer: on the canvas the opaque white glyph covers all but a
+     thin edge sliver of the mag/cyan plates, so a full-strength DOM shadow
+     reads harsher than the hologram. Tuned to match the canvas's subtle
+     fringe so the pre-canvas DOM fallback and the hologram look the same
+     (no "DEJAYVU suddenly changes style" at the handoff). */
+  text-shadow:
+    -1.4px 0 rgba(255, 46, 136, 0.16),
+    1.4px 0 rgba(53, 230, 255, 0.16),
+    0 0 13px rgba(154, 138, 196, 0.9);
+  animation: none; /* steady projection; the canvas owns all motion */
+  opacity: 1;
+}
+.brand :global(.neon-wordmark__letter[data-dead]) {
+  animation: none;
+  opacity: 1;
+}
+
+/* ---------- HERO ---------- */
+/* Sticky for the whole heroTrack dwell. */
+.hero {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 18px 120px;
+}
+.heroCore {
+  position: relative;
+  z-index: 4;
+  will-change: transform, opacity;
+}
+/* While the canvas owns the mark (data-holo, flipped by the engine only on
+   real scroll frames — never at mount) the DOM letters hide. visibility, not
+   display: the rects stay measurable and layout never moves. */
+.heroCore[data-holo] .brand {
+  visibility: hidden;
+}
+/* ---------- content sections ---------- */
+.blk {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: clamp(24px, 4vw, 44px) clamp(18px, 5vw, 40px);
+  scroll-margin-top: 20px;
+}
+
+/* ---------- scroll tracks: pin each section, dwell centred ----------
+   The .pin sticks to the viewport while you scroll through the taller .track;
+   during that dwell the content is stationary and only the fixed background
+   keeps moving. The scroll handler translates .pinInner for fast enter/exit. */
+.track {
+  position: relative;
+  /* Dwell length per pinned section. 210vh read as two screens of "empty
+     scrolling" between About and Timeline; 160vh keeps the dwell without the
+     drag. */
+  height: 160vh;
+}
+.pin {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  align-content: center;
+  /* clip only vertically: the sign's rail tick sits at negative-x outside
+     the pin box and must stay visible (during the dwell it rides at the
+     viewport centre — exactly where the lit-rail tip is) */
+  overflow-x: visible;
+  overflow-y: clip;
+}
+.pinInner {
+  width: 100%;
+}
+/* contact: final section, centred at the very bottom (no exit track). Its
+   top margin lives on `.zone .contactWrap` above — higher specificity. */
+.contactSection {
+  min-height: 100svh;
+  display: grid;
+  align-content: center;
+}
+
+/* small screens: sections are often taller than the viewport, so drop the pin
+   and scroll normally (background parallax + ignite-on-view still apply).
+   The rail hugs the left edge. */
+@media (max-width: 720px) {
+  .neon {
+    --zone-pad: 44px;
+  }
+  .track {
+    height: auto;
+  }
+  .pin {
+    position: static;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .pinInner {
+    transform: none !important;
+  }
+  .contactSection {
+    min-height: auto;
+    display: block;
+  }
+  .blk {
+    padding-block: clamp(56px, 13vw, 88px);
+  }
+}
+.head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+/* section titles: the canvas is the SOLE renderer of every title — the
+   living projection (warm-white slices, chromatic fringes, sparse glitch),
+   the same whether assembling, fully assembled, or withdrawing. There is no
+   separate DOM "steady" state, so nothing differs across scroll. The DOM
+   text below is only the pre-canvas fallback: it renders the same
+   projection material statically (no-JS and reduced motion keep this), and
+   the engine's data-fx gate — set the instant the canvas textures bake —
+   hands rendering to the canvas by making the DOM text transparent. */
+.sign {
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: clamp(32px, 7.5vw, 68px);
+  color: rgba(244, 239, 255, 0.96);
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22),
+    0 0 13px rgba(154, 138, 196, 0.9);
+}
+/* The gate lives on <html> so the boot script can restore it pre-paint. */
+:global(html[data-neon-fx]) .sign {
+  color: transparent;
+  text-shadow: none;
+}
+:global(html[data-neon-fx]) .sign:not([data-projected]) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---------- holo content pops (bio, timeline rows, contact) ----------
+   The mockup's .holo treatment: content sits invisible (under data-fx)
+   until its section's progress crosses its data-holo-at threshold, then
+   materialises with a stepped glitch — and folds back when scrubbed out. */
+:global(html[data-neon-fx]) .holoEl:not(.holoElOn) {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.holoEl {
+  position: relative;
+}
+.holoElOn {
+  animation: holoPop 0.4s steps(4, end) both;
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22);
+}
+@keyframes holoPop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  35% {
+    opacity: 0.7;
+    transform: translateY(2px);
+  }
+  55% {
+    opacity: 0.25;
+    transform: translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* about */
+.bio {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  font-size: clamp(16px, 2.6vw, 21px);
+  line-height: 1.75;
+  max-width: 60ch;
+  color: #eadffb;
+}
+.bio b {
+  color: #fff;
+  text-shadow: 0 0 14px rgba(255, 46, 136, 0.5);
+}
+
+/* timeline */
+.tl {
+  display: grid;
+}
+.tlRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--neon-line);
+  align-items: baseline;
+}
+/* Year digits carry the projection tint inside their row's hologram — the
+   whole row pops together (mockup .yr), so the year needs no own gate. */
+.tlRow .yr {
+  font-weight: 400;
+  font-size: clamp(18px, 3.4vw, 30px);
+  color: #fff;
+  text-shadow: 0 0 12px rgba(154, 138, 196, 0.8);
+}
+.tlRow .t {
+  font-family: system-ui, sans-serif;
+  font-size: clamp(15px, 2.4vw, 18px);
+  color: #eadffb;
+}
+.tlRow .t small {
+  display: block;
+  color: var(--neon-dim);
+  margin-top: 5px;
+  font-size: 13px;
+}
+/* narrow screens: the fixed 132px year column eats ~40% of the width and
+   forces constant wrapping. Collapse to a single column — the year becomes
+   an inline neon chip (the spine's main rail is the connecting line now,
+   so the old per-block mini-rail is gone). */
+@media (max-width: 720px) {
+  .tlRow {
+    display: block;
+    position: relative;
+    padding: 14px 0;
+  }
+  .tlRow .yr {
+    display: inline-block;
+    margin-right: 10px;
+    padding: 1px 8px;
+    border: 1px solid rgba(154, 138, 196, 0.55);
+    border-radius: 4px;
+    font-family: ui-monospace, 'SFMono-Regular', monospace;
+    font-size: 12px;
+    color: var(--beam);
+    text-shadow: 0 0 8px rgba(154, 138, 196, 0.6);
+  }
+}
+
+/* contact */
+.contactHead {
+  justify-content: center;
+}
+.contactWrap {
+  max-width: 560px;
+  margin: 0 auto;
+}
+/* keep the form UI off the display face — readable monospace like the rest of
+   the neon chrome; HeroUI inputs/buttons inherit it */
+.formArea {
+  font-family:
+    ui-monospace, 'SFMono-Regular', 'Cascadia Code', 'Courier New', monospace;
+}
+.formArea :is(input, textarea, button) {
+  font-family: inherit;
+}
+/* Holo-restyle the HeroUI form — HOME ONLY. These module rules are unlayered,
+   so they win over HeroUI's @layer-utilities without !important; the shared
+   ContactForm and the /contact page keep their default look. HeroUI v3
+   renders stable data-slot attributes. */
+.formArea [data-slot='input-group'] {
+  background: rgba(10, 6, 24, 0.5);
+  border: 1px solid var(--neon-line);
+  border-radius: 8px;
+  box-shadow: none;
+}
+.formArea [data-slot='input-group']:focus-within {
+  border-color: rgba(154, 138, 196, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(154, 138, 196, 0.25),
+    0 0 18px rgba(154, 138, 196, 0.22);
+}
+.formArea :is(input, textarea) {
+  color: var(--neon-ink);
+  caret-color: var(--beam);
+}
+.formArea :is(input, textarea)::placeholder {
+  color: var(--neon-dim);
+  opacity: 0.6;
+}
+.formArea [data-slot='description'] {
+  color: var(--neon-dim);
+}
+/* Quiet the attach button's pink hover (the send button stays magenta — the
+   one warm CTA, straight from the mockup). */
+.formArea [data-slot='button'][aria-label='Add files']:hover {
+  background: rgba(154, 138, 196, 0.12);
+  color: #cfc4e8;
+}
+
+.socials {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 26px;
+}
+/* The icons are the title material (warm white) with a beam glow + a faint
+   chroma-fringe pair — the SVG can't text-shadow, so it's a filter stack.
+   fill: currentColor (unlayered) overrides each icon's baked hover:fill-*. */
+.socials a {
+  display: inline-flex;
+  color: rgba(244, 239, 255, 0.96);
+  filter: drop-shadow(-1.4px 0 rgba(255, 46, 136, 0.16))
+    drop-shadow(1.4px 0 rgba(53, 230, 255, 0.16))
+    drop-shadow(0 0 13px rgba(154, 138, 196, 0.9));
+  transition:
+    color 0.15s,
+    filter 0.15s,
+    transform 0.15s;
+}
+.socials a svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+.socials a:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  filter: drop-shadow(-1.4px 0 rgba(255, 46, 136, 0.22))
+    drop-shadow(1.4px 0 rgba(53, 230, 255, 0.22))
+    drop-shadow(0 0 13px rgba(154, 138, 196, 1))
+    drop-shadow(0 0 26px rgba(154, 138, 196, 0.55));
+}
+
+.foot {
+  text-align: center;
+  padding: 40px 18px 120px;
+  font-family: ui-monospace, var(--font-cjk), monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--neon-dim);
+}
+
+/* (Street pill nav moved to globals.css as .neon-street — shared with the
+   deep-page shell.) */
+
+/* ---------- reduced motion: everything lit and static, no canvas ----------
+   The engine never sets data-fx under reduce, so every title rests in its
+   static projection material — only the content-pop animation is killed. */
+@media (prefers-reduced-motion: reduce) {
+  /* no hero dwell: the mark stays solid and the page just scrolls */
+  .heroTrack {
+    height: auto;
+  }
+  .hero {
+    position: static;
+    height: auto;
+    min-height: 100svh;
+  }
+  .holoElOn {
+    animation: none !important;
+  }
+}

@@ -1,0 +1,404 @@
+/* ============================================================
+   Neon Junction — three venue stops on the projection run
+   (Field Notes / Darkroom / The Lab), pinned like every other
+   section: the titles slice-assemble sequentially from the
+   street track's dwell progress, counts pop as their title
+   completes. Hover / focus adds the live preview strip
+   (marquee / prints / hazard) and brightens; clicking fades to
+   black and rides into the route. One projection material —
+   the beam family — everywhere. Scoped module; inherits
+   --zone-pad and the neon tokens from NeonLanding's .neon root.
+   ============================================================ */
+
+.junction {
+  position: relative;
+  padding: clamp(72px, 13vh, 150px) 0;
+  scroll-margin-top: 15svh;
+}
+/* Desktop + motion: the pin centres the junction, so the flow padding would
+   push it off-centre inside the 100svh sticky box. Reduced motion keeps the
+   generous flow padding (the Track collapses to static there). */
+@media (min-width: 721px) and (prefers-reduced-motion: no-preference) {
+  .junction {
+    padding: 8px 0;
+  }
+}
+
+/* ---------- terminal row ---------- */
+.term {
+  all: unset;
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr;
+  grid-template-rows: auto 0fr;
+  align-items: center;
+  gap: 0 clamp(12px, 2.4vw, 26px);
+  padding: 26px 0;
+  cursor: pointer;
+  transition:
+    grid-template-rows 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.35s ease;
+}
+
+.term:hover,
+.term:focus-visible,
+.term.leaving {
+  grid-template-rows: auto 1fr;
+  background: linear-gradient(
+    90deg,
+    color-mix(in oklab, var(--beam) 8%, transparent),
+    transparent 72%
+  );
+}
+
+.term:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+
+/* While the canvas owns projection, a visually absent venue is absent from
+   pointer/keyboard interaction too. The engine also sets `inert`; these rules
+   keep hit-testing and preview layout aligned with that semantic state. */
+:global(html[data-neon-fx]) .term:not([data-projected]) {
+  grid-template-rows: auto 0fr;
+  background: transparent;
+  cursor: default;
+  pointer-events: none;
+  transition: background 0.35s ease;
+}
+
+/* ---------- venue name: a hologram like every sign ---------- */
+/* Steady projection light by default (no-JS / reduced motion see this);
+   the landing root's data-fx gate hides it until it materialises. */
+.tname {
+  font-family:
+    var(--font-display), var(--font-cjk), 'Arial Narrow', system-ui, sans-serif;
+  font-size: clamp(38px, 6.8vw, 76px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 239, 255, 0.96);
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22),
+    0 0 13px rgba(154, 138, 196, 0.9);
+  white-space: nowrap;
+}
+/* Under the fx gate the CANVAS is the sole renderer of the venue name (the
+   living window-mode projection, cracks and all), so the DOM name stays
+   fully transparent — no hover/data-lit exception, or it would double the
+   canvas. The ignite glitch below is only for the no-fx fallback. */
+:global(html[data-neon-fx]) .tname {
+  color: transparent;
+  text-shadow: none;
+  animation: none !important;
+}
+:global(html[data-neon-fx]) .tname:not([data-projected]) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* No-fx fallback (reduced motion / textures not yet baked): hover/focus
+   still wakes the DOM name with the stepped ignite glitch. */
+.term:hover .tname,
+.term:focus-visible .tname,
+.term.leaving .tname {
+  animation: ignite 0.8s steps(1, end) forwards;
+}
+
+@keyframes ignite {
+  0% {
+    opacity: 0.35;
+    text-shadow: none;
+  }
+  8% {
+    opacity: 0.85;
+    text-shadow: 0 0 8px rgba(154, 138, 196, 0.9);
+  }
+  12% {
+    opacity: 0.3;
+    text-shadow: none;
+  }
+  22% {
+    opacity: 1;
+    text-shadow:
+      0 0 8px rgba(154, 138, 196, 0.9),
+      0 0 22px rgba(154, 138, 196, 0.7);
+  }
+  27% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+    text-shadow:
+      0.8px 0 rgba(255, 46, 136, 0.22),
+      -0.8px 0 rgba(53, 230, 255, 0.22),
+      0 0 13px rgba(154, 138, 196, 0.9);
+  }
+}
+
+/* ---------- count ---------- */
+.tcount {
+  justify-self: end;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon-dim);
+  white-space: nowrap;
+}
+
+.tcount b {
+  font-size: 17px;
+  color: var(--neon-ink);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.arw {
+  color: var(--neon-dim);
+  font-size: 18px;
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease,
+    text-shadow 0.3s ease;
+}
+
+.term:hover .arw,
+.term:focus-visible .arw,
+.term.leaving .arw {
+  transform: translateX(6px);
+  color: #fff;
+  text-shadow: 0 0 10px var(--beam);
+}
+
+:global(html[data-neon-fx]) .term:not([data-projected]) .arw {
+  transform: none;
+  color: var(--neon-dim);
+  text-shadow: none;
+}
+
+/* ---------- expandable preview strip ---------- */
+/* align-self: stretch is load-bearing: the row's align-items: center
+   would otherwise keep this at natural height over a 0fr track. */
+.tpre {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.tpreIn {
+  padding: 14px 2px 6px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Field Notes: marquee of the latest titles (content rendered twice) */
+.mqClip,
+.photoMqClip {
+  overflow: hidden;
+  flex: 1;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 5%,
+    #000 95%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 5%,
+    #000 95%,
+    transparent
+  );
+}
+
+.mq {
+  display: flex;
+  gap: 52px;
+  width: max-content;
+  animation: mq 16s linear infinite;
+  animation-play-state: paused;
+}
+
+.term:hover .mq,
+.term:focus-visible .mq,
+.term.leaving .mq,
+.term:hover .photoMq,
+.term:focus-visible .photoMq,
+.term.leaving .photoMq {
+  animation-play-state: running;
+}
+
+:global(html[data-neon-fx]) .term:not([data-projected]) .mq,
+:global(html[data-neon-fx]) .term:not([data-projected]) .photoMq {
+  animation-play-state: paused;
+}
+
+@keyframes mq {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.mq span {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--neon-dim);
+  white-space: nowrap;
+}
+
+.mq b {
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Darkroom: two equal ordered groups make one seamless photo loop. Each
+   group owns the same trailing gap, so -50% lands on an identical boundary. */
+.photoMq {
+  display: flex;
+  width: max-content;
+  animation: mq 16s linear infinite;
+  animation-play-state: paused;
+}
+
+.photoMqGroup {
+  display: flex;
+  flex: none;
+  gap: 10px;
+  padding-right: 10px;
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  height: 58px;
+  width: clamp(76px, 10vw, 110px);
+  flex: none;
+  border-radius: 3px;
+  border: 1px solid color-mix(in oklab, var(--beam) 38%, transparent);
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+}
+
+.thumbImg {
+  object-fit: cover;
+}
+
+/* The Lab: still being wired up — same projection light as everything */
+.hazardline {
+  flex: 1;
+  height: 9px;
+  border-radius: 2px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in oklab, var(--beam) 80%, transparent) 0 9px,
+    transparent 9px 18px
+  );
+}
+
+.soonTag {
+  font-family: ui-monospace, var(--font-cjk), 'SFMono-Regular', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--beam);
+  border: 1px solid color-mix(in oklab, var(--beam) 45%, transparent);
+  border-radius: 3px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+/* ---------- departure blackout ---------- */
+/* Portalled under <body>, above every homepage stacking context. */
+.blackout {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: #020108;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease 120ms;
+}
+
+.blackoutOn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ---------- touch: no hover, keep the previews alive ---------- */
+@media (hover: none) {
+  .term {
+    grid-template-rows: auto 1fr;
+  }
+
+  .mq {
+    animation-play-state: running;
+  }
+
+  .photoMq {
+    animation-play-state: running;
+  }
+
+  :global(html[data-neon-fx]) .term:not([data-projected]) {
+    grid-template-rows: auto 0fr;
+  }
+
+  :global(html[data-neon-fx]) .term:not([data-projected]) .mq,
+  :global(html[data-neon-fx]) .term:not([data-projected]) .photoMq {
+    animation-play-state: paused;
+  }
+}
+
+/* ---------- narrow screens ---------- */
+@media (max-width: 720px) {
+  .tname {
+    font-size: clamp(30px, 9.5vw, 44px);
+  }
+
+  .tcount {
+    display: none;
+  }
+}
+
+/* ---------- reduced motion: lit, still, instant ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .term {
+    transition: none;
+  }
+
+  .mq,
+  .photoMq,
+  .term:hover .mq,
+  .term:focus-visible .mq,
+  .term.leaving .mq,
+  .term:hover .photoMq,
+  .term:focus-visible .photoMq,
+  .term.leaving .photoMq {
+    animation: none;
+  }
+
+  .photoMqGroup[aria-hidden='true'] {
+    display: none;
+  }
+
+  /* no data-fx gate under reduce — the static projection material shows */
+  .tname,
+  .term:hover .tname,
+  .term:focus-visible .tname,
+  .term.leaving .tname {
+    animation: none;
+    opacity: 1;
+  }
+
+  .blackout {
+    transition: none;
+  }
+}

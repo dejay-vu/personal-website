@@ -1,0 +1,141 @@
+/* ============================================================
+   Projection HUD — fixed top-right readout + sector nav (home).
+   ============================================================ */
+
+.hud {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+  text-align: right;
+  font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Engine-written readout: fixed-width text (tabular digits + padStart), so
+   per-frame updates never change the box. Decorative — hidden from AT. */
+.readout {
+  pointer-events: none;
+}
+.pct {
+  display: block;
+  font-size: 11px;
+  color: var(--beam, #9a8ac4);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(154, 138, 196, 0.5);
+}
+/* The engine writes the text as a CSS custom property (see neonScroll.ts) so
+   the boot script can restore it before first paint. Fallback covers the
+   fresh no-JS state. */
+.pct::after {
+  content: var(--neon-hud-pct, 'PROJ 000%');
+}
+.status {
+  display: block;
+  inline-size: 42ch;
+  margin-top: 3px;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--neon-dim, #9a86c0);
+  white-space: nowrap;
+}
+.status::after {
+  content: var(--neon-hud-status, 'SECTOR GATE · DEJAYVU STABLE');
+}
+
+/* Sector list = the landing's nav. The IntersectionObserver toggles the
+   global `on` class (same contract as the street pill it replaces). */
+.links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+.links a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 3px 0 3px 12px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--neon-dim, #9a86c0);
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    text-shadow 0.15s;
+}
+.links a b {
+  font-weight: 400;
+  font-size: 9px;
+  opacity: 0.65;
+}
+.links a:hover {
+  color: #fff;
+  text-shadow: 0 0 9px var(--beam, #9a8ac4);
+}
+/* Active highlight: the `.on` class is set by the IntersectionObserver
+   after hydration; the html[data-neon-sector] attribute is restored by the
+   boot script BEFORE first paint (from sessionStorage), so a refresh never
+   flashes the wrong sector. Both select the same styles. */
+.links a:global(.on),
+:global(html[data-neon-sector='home']) .links a[data-navlink='home'],
+:global(html[data-neon-sector='about']) .links a[data-navlink='about'],
+:global(html[data-neon-sector='timeline']) .links a[data-navlink='timeline'],
+:global(html[data-neon-sector='street']) .links a[data-navlink='street'],
+:global(html[data-neon-sector='contact']) .links a[data-navlink='contact'] {
+  color: #fff;
+  text-shadow:
+    0 0 4px #fff,
+    0 0 12px var(--beam, #9a8ac4);
+}
+.links a:global(.on) b,
+:global(html[data-neon-sector='home']) .links a[data-navlink='home'] b,
+:global(html[data-neon-sector='about']) .links a[data-navlink='about'] b,
+:global(html[data-neon-sector='timeline']) .links a[data-navlink='timeline'] b,
+:global(html[data-neon-sector='street']) .links a[data-navlink='street'] b,
+:global(html[data-neon-sector='contact']) .links a[data-navlink='contact'] b {
+  opacity: 1;
+  color: var(--beam, #9a8ac4);
+}
+.links a:focus-visible {
+  outline: 2px solid var(--cyan, #35e6ff);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Narrow screens: codes only — the current sector keeps its name. */
+@media (max-width: 560px) {
+  .hud {
+    top: 10px;
+    right: 12px;
+    gap: 9px;
+  }
+  .links a span {
+    visibility: hidden;
+  }
+  .links a {
+    inline-size: 17ch;
+    justify-content: flex-end;
+  }
+  .links a:global(.on) span,
+  :global(html[data-neon-sector='home']) .links a[data-navlink='home'] span,
+  :global(html[data-neon-sector='about']) .links a[data-navlink='about'] span,
+  :global(html[data-neon-sector='timeline'])
+    .links
+    a[data-navlink='timeline']
+    span,
+  :global(html[data-neon-sector='street']) .links a[data-navlink='street'] span,
+  :global(html[data-neon-sector='contact'])
+    .links
+    a[data-navlink='contact']
+    span {
+    visibility: visible;
+  }
+}

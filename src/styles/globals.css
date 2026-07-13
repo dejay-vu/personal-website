@@ -1,0 +1,1028 @@
+@import 'tailwindcss';
+@import '@heroui/styles';
+
+@plugin "@tailwindcss/typography";
+
+@source "../../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme='dark'], [data-theme='dark'] *));
+@custom-variant betterhover (@media (hover: hover));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --radius-large: calc(var(--radius) * 1.5);
+  --translate-double: 200%;
+}
+
+:root,
+.light,
+[data-theme='light'] {
+  --theme-transition-duration: 220ms;
+  --theme-transition-easing: ease-in-out;
+  --background: #f7f7f7;
+  --foreground: #4b5563;
+  --accent: #4f758b;
+  --accent-hover: #42687d;
+  --accent-foreground: #f8fafc;
+  --accent-soft: #e6eef2;
+  color-scheme: light;
+}
+
+.dark,
+[data-theme='dark'] {
+  --background: #242629;
+  --foreground: #cbd2d9;
+  --accent: #8db7c9;
+  --accent-hover: #a0c4d4;
+  --accent-foreground: #11171a;
+  --accent-soft: #263238;
+  color-scheme: dark;
+}
+
+html,
+body {
+  min-height: 100%;
+  background: var(--background);
+}
+
+html {
+  overflow-x: clip;
+  overflow-y: auto;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 26%, transparent)
+    var(--background);
+  scrollbar-gutter: stable;
+}
+
+html::-webkit-scrollbar {
+  width: 12px;
+  height: 0;
+}
+
+html::-webkit-scrollbar-track {
+  background-color: var(--background);
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--foreground) 26%, transparent);
+  border: 3px solid var(--background);
+  border-radius: 999px;
+}
+
+body {
+  color: var(--foreground);
+  overflow-x: clip;
+}
+
+/* Terminal-style frame for post code blocks (replaces daisyUI's
+   mockup-code, which was the only class used from that plugin). */
+.note-code-block {
+  background-color: #282c34;
+  border-radius: 1rem;
+  padding-block: 1.25rem;
+}
+
+.note-code-block code,
+.note-code-block code span {
+  border: 0 !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+}
+
+.note-code-block code {
+  padding: 0 !important;
+}
+
+.note-code-block code::before,
+.note-code-block code::after {
+  content: none !important;
+}
+
+.admin-drawer-input[data-slot='input-group']:has(
+    [data-slot='input-group-input']:focus
+  ),
+.admin-drawer-input[data-slot='input-group']:has(
+    [data-slot='input-group-textarea']:focus
+  ),
+.admin-drawer-date-input[data-slot='date-input-group']:focus-within {
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  border-color: transparent !important;
+  box-shadow: inset 0 0 0 2px var(--focus) !important;
+  outline: none !important;
+}
+
+.note-editor-floating-action {
+  box-shadow:
+    0 18px 48px color-mix(in oklab, var(--foreground) 28%, transparent),
+    0 4px 14px color-mix(in oklab, var(--foreground) 16%, transparent) !important;
+}
+
+.note-editor-markdown-input[data-slot='input-group'] {
+  height: 100% !important;
+  min-height: 32rem;
+  width: 100%;
+}
+
+.note-editor-markdown-input[data-slot='input-group']:has(
+    [data-slot='input-group-textarea']
+  ) {
+  align-items: stretch;
+  height: 100% !important;
+}
+
+.note-editor-markdown-input [data-slot='input-group-textarea'] {
+  display: block;
+  height: 100% !important;
+  min-height: 32rem;
+  overflow: auto;
+  resize: none;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .note-editor-markdown-input[data-slot='input-group'],
+  .note-editor-markdown-input [data-slot='input-group-textarea'] {
+    min-height: 100%;
+  }
+}
+
+.toast-region {
+  z-index: 100;
+}
+
+.toast {
+  background: var(--background) !important;
+  border: 1px solid color-mix(in oklab, var(--foreground) 12%, transparent);
+  box-shadow:
+    0 18px 48px color-mix(in oklab, var(--foreground) 18%, transparent),
+    0 4px 16px color-mix(in oklab, var(--foreground) 10%, transparent) !important;
+  color: var(--foreground);
+}
+
+.toast__title {
+  color: var(--foreground) !important;
+}
+
+.toast__description {
+  color: color-mix(in oklab, var(--foreground) 62%, transparent) !important;
+}
+
+.toast__close-button {
+  opacity: 0.75 !important;
+  pointer-events: auto !important;
+  transition:
+    opacity 150ms ease,
+    background-color 150ms ease !important;
+}
+
+.toast__close-button:hover {
+  opacity: 1 !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--theme-transition-duration);
+  animation-timing-function: var(--theme-transition-easing);
+  mix-blend-mode: normal;
+}
+
+html[data-theme-transition='true'] {
+  transition-delay: 0ms !important;
+  transition-duration: var(--theme-transition-duration) !important;
+  transition-property: background-color, border-color, outline-color !important;
+  transition-timing-function: var(--theme-transition-easing) !important;
+}
+
+html[data-theme-transition='true']::-webkit-scrollbar-track,
+html[data-theme-transition='true']::-webkit-scrollbar-thumb {
+  transition-delay: 0ms !important;
+  transition-duration: var(--theme-transition-duration) !important;
+  transition-property: background-color, border-color !important;
+  transition-timing-function: var(--theme-transition-easing) !important;
+}
+
+html[data-theme-transition='true'] body {
+  transition-delay: 0ms !important;
+  transition-duration: var(--theme-transition-duration) !important;
+  transition-property:
+    color, background-color, border-color, outline-color !important;
+  transition-timing-function: var(--theme-transition-easing) !important;
+}
+
+html[data-theme-instant='true']
+  *:not([data-theme-switch-icon]):not([data-theme-switch-icon] *),
+html[data-theme-instant='true']
+  *:not([data-theme-switch-icon]):not([data-theme-switch-icon] *)::before,
+html[data-theme-instant='true']
+  *:not([data-theme-switch-icon]):not([data-theme-switch-icon] *)::after {
+  transition: none !important;
+}
+
+html[data-theme-fallback-transition='true']
+  :where(
+    header,
+    nav,
+    main,
+    footer,
+    section,
+    article,
+    aside,
+    div,
+    span,
+    p,
+    h1,
+    h2,
+    h3,
+    h4,
+    a,
+    button,
+    input,
+    textarea,
+    select,
+    label,
+    time,
+    li,
+    ul,
+    ol,
+    table,
+    thead,
+    tbody,
+    tr,
+    th,
+    td,
+    svg,
+    path,
+    [data-slot],
+    [role='tab'],
+    [role='row'],
+    [role='cell'],
+    [role='columnheader']
+  ) {
+  transition-delay: 0ms !important;
+  transition-duration: var(--theme-transition-duration) !important;
+  transition-property:
+    color, background-color, border-color, outline-color, text-decoration-color,
+    box-shadow, fill, stroke !important;
+  transition-timing-function: var(--theme-transition-easing) !important;
+}
+
+html[data-theme-transition='true'] .note-code-block,
+html[data-theme-transition='true'] .note-code-block * {
+  transition: none !important;
+}
+
+html[data-theme-transition='true'] [data-theme-switch-icon] {
+  transition-duration: 300ms !important;
+  transition-property: opacity, transform, translate, scale, rotate !important;
+  transition-timing-function: ease-in-out !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --theme-transition-duration: 0ms;
+  }
+
+  html[data-theme-transition='true'] [data-theme-switch-icon] {
+    transition-duration: 0ms !important;
+  }
+}
+
+/* ==============================================================
+   NEON SITE THEME
+   The public site is committed dark-neon (see NeonLanding). These
+   tokens re-point the six base design vars — which nearly every
+   component styles off of (bg-background / text-foreground /
+   border-foreground/N / accent) — to the neon palette, so most of
+   the site re-skins by retokenization. Applied via
+   <html class="neon-site">; admin opts back out with .app-neutral
+   (AppShell wraps the /admin subtree). Values mirror NEON_TOKENS +
+   the accent set in NeonLanding.module.css.
+   ============================================================== */
+.neon-site {
+  --background: #0b0714;
+  --foreground: #eae4ff;
+  --accent: #ff2e88;
+  --accent-hover: #ff5ba0;
+  --accent-foreground: #07040d;
+  --accent-soft: #1a0f2a;
+
+  --mag: #ff2e88;
+  --cyan: #35e6ff;
+  --jade: #5dff9e;
+  --amber: #ffce3a;
+  /* the single projection tint — the 50/50 blend of the hero's two hues.
+     Everything on the deep pages now burns this one light; --mag/--cyan
+     survive only as the ≤0.28-alpha chromatic-fringe pair. Mirrors the
+     scoped --beam in NeonLanding.module.css + the bake in neonHolo.ts. */
+  --beam: #9a8ac4;
+  --neon-ink: #f3ecff;
+  --neon-dim: #9a86c0;
+  --neon-line: rgba(154, 134, 192, 0.18);
+
+  color-scheme: dark;
+}
+
+/* Admin keeps its original neutral dark regardless of the neon default. */
+.app-neutral {
+  --background: #242629;
+  --foreground: #cbd2d9;
+  --accent: #8db7c9;
+  --accent-hover: #a0c4d4;
+  --accent-foreground: #11171a;
+  --accent-soft: #263238;
+  color-scheme: dark;
+}
+
+/* ==============================================================
+   HOLO DEEP SHELL
+   The deep-page venue title (HoloSign) + the minimal top-right
+   return link (HoloReturn) — the home page's holo material,
+   static (no canvas engine here). One warm-white projection
+   light + a chromatic-fringe pair, exactly like the home signs.
+   ============================================================== */
+.holo-sign {
+  display: inline-block;
+  font-family:
+    var(--font-display), var(--font-cjk), 'Arial Narrow', 'PingFang SC',
+    system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(32px, 7vw, 64px);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(244, 239, 255, 0.96);
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22),
+    0 0 13px rgba(154, 138, 196, 0.9);
+  animation: holo-sign-pop 0.4s steps(4, end) both;
+}
+@keyframes holo-sign-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  35% {
+    opacity: 0.7;
+    transform: translateY(2px);
+  }
+  55% {
+    opacity: 0.25;
+    transform: translateY(1px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.holo-return {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 30;
+}
+.holo-return a {
+  font-family: ui-monospace, 'SFMono-Regular', 'Cascadia Code', monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon-dim);
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    text-shadow 0.15s;
+}
+.holo-return a:hover {
+  color: #fff;
+  text-shadow: 0 0 9px var(--beam);
+}
+.holo-return a:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (max-width: 560px) {
+  .holo-return {
+    top: 10px;
+    right: 12px;
+  }
+}
+
+/* Beam frame for Note detail-page code blocks. */
+.neon-site .note-code-block {
+  background-color: #0b0714;
+  border: 1px solid color-mix(in oklab, var(--beam) 38%, transparent);
+  box-shadow:
+    0 0 26px rgba(154, 138, 196, 0.14),
+    inset 0 0 0 1px rgba(244, 239, 255, 0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-sign {
+    animation: none;
+  }
+  .holo-return a {
+    transition: none;
+  }
+}
+
+/* ==============================================================
+   NEON STOREFRONT CARDS + LIGHTBOX TILES
+   Card system for the public notes/photos feeds (NoteCard,
+   PhotoCard, ticket chips, feed chrome, search, article prose).
+   Only public components reference these classes, so admin
+   (.app-neutral) never renders them. Everything keys off
+   --card-hue; the thoughts grid cycles it via nth-child — safe
+   because both feeds are append-only, so child positions (and
+   therefore hues) never shift. No backdrop-filter anywhere: the
+   only always-on costs are 1px borders and static shadows.
+   ============================================================== */
+/* One projection light everywhere — no per-card hue cycle. */
+.neon-card {
+  --card-hue: var(--beam);
+  /* Cards hold real prose — keep them on the readable body sans everywhere
+     (the home feed sections set this too; deep pages would otherwise fall
+     back to the serif body font). */
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  border-radius: 6px;
+  background: linear-gradient(
+    180deg,
+    rgba(22, 9, 36, 0.7),
+    rgba(9, 5, 18, 0.8)
+  );
+  border: 1px solid color-mix(in oklab, var(--card-hue) 55%, transparent);
+  box-shadow:
+    0 0 14px color-mix(in oklab, var(--card-hue) 12%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.neon-card:focus-within {
+  border-color: color-mix(in oklab, var(--card-hue) 90%, transparent);
+  box-shadow:
+    0 0 8px color-mix(in oklab, var(--card-hue) 55%, transparent),
+    0 0 30px color-mix(in oklab, var(--card-hue) 28%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+/* Shop-window cover: diagonal reflection streak + bottom scrim. */
+.neon-card__window {
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.neon-card__window::before {
+  content: '';
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.07) 46%,
+    rgba(255, 255, 255, 0.02) 52%,
+    transparent 56%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.neon-card__window::after {
+  content: '';
+  position: absolute;
+  inset: 55% 0 0;
+  background: linear-gradient(transparent, rgba(7, 4, 13, 0.5));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.neon-card__meta {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--card-hue);
+  margin-top: 14px;
+}
+
+.neon-card__title {
+  color: var(--neon-ink, #f3ecff);
+  font-weight: 700;
+}
+
+.neon-card:focus-within .neon-card__title {
+  animation: neon-title-flicker 0.45s steps(1, end) forwards;
+}
+
+@keyframes neon-title-flicker {
+  0% {
+    opacity: 1;
+    text-shadow: none;
+  }
+  18% {
+    opacity: 0.6;
+    text-shadow: 0 0 8px var(--card-hue);
+  }
+  26% {
+    opacity: 1;
+    text-shadow: none;
+  }
+  38% {
+    opacity: 0.82;
+  }
+  46%,
+  100% {
+    opacity: 1;
+    color: #fff;
+    text-shadow:
+      0.8px 0 rgba(255, 46, 136, 0.22),
+      -0.8px 0 rgba(53, 230, 255, 0.22),
+      0 0 2px rgba(255, 255, 255, 0.6),
+      0 0 12px var(--card-hue);
+  }
+}
+
+/* Ticket chips (category filters). Hue inherits from the card;
+   standalone rows (active filters) set --card-hue themselves. */
+.neon-ticket {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--card-hue, var(--beam)) 70%, white);
+  border: 1px solid
+    color-mix(in oklab, var(--card-hue, var(--beam)) 45%, transparent);
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--card-hue, var(--beam)) 6%, transparent);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.neon-ticket:hover {
+  border-color: color-mix(
+    in oklab,
+    var(--card-hue, var(--beam)) 80%,
+    transparent
+  );
+}
+
+.neon-ticket[data-active='true'] {
+  background: color-mix(
+    in oklab,
+    var(--card-hue, var(--beam)) 18%,
+    transparent
+  );
+  border-color: color-mix(
+    in oklab,
+    var(--card-hue, var(--beam)) 85%,
+    transparent
+  );
+  color: #fff;
+  text-shadow: 0 0 8px var(--card-hue, var(--beam));
+}
+
+/* Lightbox tile (gallery). One projection light; the featured 2x2 print
+   just reads brighter (stronger beam border), not a different hue. */
+.neon-tile {
+  --card-hue: var(--beam);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--card-hue) 45%, transparent);
+  box-shadow:
+    0 0 12px color-mix(in oklab, var(--card-hue) 10%, transparent),
+    0 10px 26px rgba(0, 0, 0, 0.4);
+  background: #0a0714;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.neon-tile[data-featured='true'] {
+  border-color: color-mix(in oklab, var(--beam) 70%, transparent);
+}
+
+.neon-tile:focus-within {
+  border-color: color-mix(in oklab, var(--card-hue) 90%, transparent);
+  box-shadow:
+    0 0 10px color-mix(in oklab, var(--card-hue) 45%, transparent),
+    0 0 30px color-mix(in oklab, var(--card-hue) 22%, transparent);
+}
+
+/* Hover ignition is hover-capable only: touch devices keep the
+   lightbox permanently powered on (never dimmed). */
+@media (hover: hover) and (pointer: fine) {
+  .neon-card:hover {
+    border-color: color-mix(in oklab, var(--card-hue) 90%, transparent);
+    box-shadow:
+      0 0 8px color-mix(in oklab, var(--card-hue) 55%, transparent),
+      0 0 30px color-mix(in oklab, var(--card-hue) 28%, transparent),
+      0 12px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .neon-card:hover .neon-card__title {
+    animation: neon-title-flicker 0.45s steps(1, end) forwards;
+  }
+
+  .neon-tile img {
+    filter: brightness(0.92);
+    transition: filter 0.2s ease;
+  }
+
+  .neon-tile:hover,
+  .neon-tile:focus-within {
+    border-color: color-mix(in oklab, var(--card-hue) 90%, transparent);
+    box-shadow:
+      0 0 10px color-mix(in oklab, var(--card-hue) 45%, transparent),
+      0 0 30px color-mix(in oklab, var(--card-hue) 22%, transparent);
+  }
+
+  .neon-tile:hover img,
+  .neon-tile:focus-within img {
+    filter: brightness(1);
+  }
+}
+
+/* Active-filter ticket row above the feeds. */
+.neon-filter-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.neon-filter-row__label {
+  font-family:
+    var(--font-display), 'Arial Narrow', 'PingFang SC', system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: #fff;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 10px var(--beam);
+}
+
+.neon-filter-row__clear {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--neon-dim, #9a86c0);
+  text-decoration: underline dotted;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.neon-filter-row__clear:hover {
+  color: var(--neon-ink, #f3ecff);
+}
+
+/* Feed chrome: loading dots, idle counter, end sign, empty state. */
+.neon-feed-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neon-dim, #9a86c0);
+}
+
+.neon-feed-status__dots {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.neon-feed-status__dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--beam);
+  box-shadow: 0 0 8px var(--beam);
+  animation: neon-dot 1.2s ease-in-out infinite;
+}
+
+.neon-feed-status__dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.neon-feed-status__dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes neon-dot {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.neon-feed-endsign {
+  display: inline-block;
+  font-family:
+    var(--font-display), 'Arial Narrow', 'PingFang SC', system-ui, sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.24em;
+  color: #fff;
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22),
+    0 0 3px #fff,
+    0 0 12px var(--beam),
+    0 0 26px color-mix(in oklab, var(--beam) 45%, transparent);
+  border: 1px solid color-mix(in oklab, var(--beam) 40%, transparent);
+  border-radius: 4px;
+  padding: 9px 20px;
+  box-shadow: 0 0 16px color-mix(in oklab, var(--beam) 14%, transparent);
+}
+
+.neon-empty {
+  border: 1px dashed
+    color-mix(in oklab, var(--neon-dim, #9a86c0) 45%, transparent);
+  border-radius: 6px;
+  padding: 34px 20px;
+  text-align: center;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--neon-dim, #9a86c0);
+}
+
+.neon-empty__sig {
+  color: var(--beam);
+  text-shadow: 0 0 10px color-mix(in oklab, var(--beam) 50%, transparent);
+}
+
+/* Neon search field (HeroUI SearchField slots). */
+.neon-search-group {
+  border-radius: 6px;
+  border: 1px solid color-mix(in oklab, var(--beam) 40%, transparent);
+  background: rgba(22, 9, 36, 0.7);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.neon-search-group:hover,
+.neon-search-group[data-pending] {
+  border-color: color-mix(in oklab, var(--beam) 60%, transparent);
+}
+
+.neon-search-group:focus-within {
+  border-color: color-mix(in oklab, var(--beam) 85%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--beam) 30%, transparent),
+    0 0 18px color-mix(in oklab, var(--beam) 22%, transparent);
+}
+
+/* Restrained neon accents for the article body (overlay + detail
+   page). Body text is untouched — structure only. */
+.neon-prose h2 {
+  position: relative;
+  padding-bottom: 7px;
+}
+
+.neon-prose h2::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 64px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--beam), transparent);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--beam) 50%, transparent);
+}
+
+.neon-prose blockquote {
+  border-left: 2px solid var(--beam);
+  box-shadow: inset 3px 0 12px -6px var(--beam);
+  background: rgba(154, 138, 196, 0.05);
+}
+
+.neon-prose hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--beam), transparent);
+  box-shadow: 0 0 10px rgba(154, 138, 196, 0.35);
+}
+
+/* ==============================================================
+   NEON DEEP SHELL
+   Quiet-neon ambience for the deep pages (article/photo/list/
+   contact): faint corner hue glows + vignette on the flat night
+   base. No city image, no rain — reading first, zero JS.
+   ============================================================== */
+.neon-ambience {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      56% 40% at 12% -6%,
+      rgba(154, 138, 196, 0.1),
+      transparent 62%
+    ),
+    radial-gradient(
+      52% 38% at 90% 106%,
+      rgba(154, 138, 196, 0.07),
+      transparent 62%
+    ),
+    radial-gradient(
+      120% 120% at 50% 40%,
+      transparent 55%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
+}
+
+/* Admin opts back to neutral: the strip wordmark must not glow there. */
+.app-neutral .neon-wordmark__letter {
+  animation: none;
+  text-shadow: none;
+  color: var(--foreground);
+  opacity: 1;
+}
+
+/* ==============================================================
+   NEON WORDMARK
+   The DEJAYVU dead-tube wordmark, shared by the home hero and the
+   deep-page top strip. Sized purely by inherited font-size — the
+   glow shadows are in em so one class works at 160px and 20px.
+   ============================================================== */
+.neon-wordmark {
+  font-family:
+    var(--font-display), var(--font-cjk), 'Arial Narrow', 'PingFang SC',
+    system-ui, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.9;
+}
+
+.neon-wordmark__letter {
+  display: inline-block;
+  color: #fff;
+  text-shadow:
+    0 0 0.03em #fff,
+    0 0 0.07em var(--c),
+    0 0 0.17em var(--c),
+    0 0 0.33em var(--c),
+    0 0 0.6em var(--c);
+  animation: neon-flk 7s infinite;
+  animation-delay: var(--d, 0s);
+}
+
+/* Dead-tube letters idle at 0.45 so the wordmark still reads as
+   DEJAYVU — the flicker sells "broken", the baseline keeps it legible. */
+.neon-wordmark__letter[data-dead] {
+  animation: neon-dead 5.5s infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@keyframes neon-flk {
+  0%,
+  42%,
+  44%,
+  88%,
+  90%,
+  100% {
+    opacity: 1;
+  }
+  43% {
+    opacity: 0.55;
+  }
+  89% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes neon-dead {
+  0%,
+  60%,
+  100% {
+    opacity: 0.45;
+  }
+  6% {
+    opacity: 0.9;
+  }
+  7% {
+    opacity: 0.26;
+  }
+  9% {
+    opacity: 0.85;
+  }
+  10% {
+    opacity: 0.32;
+  }
+  62% {
+    opacity: 0.8;
+  }
+  63% {
+    opacity: 0.38;
+  }
+}
+
+/* ==============================================================
+   NEON JUSTIFIED GALLERY
+   Equal-height photo rows at TRUE aspect ratios (zero cropping):
+   within a flex row, grow ∝ ratio and basis ∝ ratio resolve widths
+   exactly proportional to each photo's --ar, so height = width/ar
+   is identical across the row. The ::after filler stops the last
+   row from stretching. No min-width by design — a floor would
+   break the equal-height math.
+   ============================================================== */
+.neon-justified {
+  --jg-base: 12rem;
+  --jg-gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--jg-gap);
+}
+
+@media (min-width: 768px) {
+  .neon-justified {
+    --jg-base: 14rem;
+    --jg-gap: 12px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .neon-justified {
+    --jg-base: 16rem;
+    --jg-gap: 14px;
+  }
+}
+
+.neon-justified > * {
+  flex: calc(var(--ar, 1.5) * 100) 1 calc(var(--ar, 1.5) * var(--jg-base));
+  aspect-ratio: var(--ar, 1.5);
+  min-width: 0;
+}
+
+.neon-justified::after {
+  content: '';
+  flex: 1000000 1 0%;
+}
+
+/* Full-width breaker (~every 9th, landscape only): its own row,
+   height-capped by shrinking width — the true ratio is preserved. */
+.neon-justified > [data-breaker='true'] {
+  flex: 1 1 100%;
+  max-width: min(100%, calc(78dvh * var(--ar, 1.5)));
+  margin-inline: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-card,
+  .neon-tile,
+  .neon-ticket,
+  .neon-search-group {
+    transition: none;
+  }
+
+  .neon-wordmark__letter,
+  .neon-wordmark__letter[data-dead] {
+    animation: none;
+  }
+
+  .neon-wordmark__letter[data-dead] {
+    opacity: 0.45;
+  }
+
+  .neon-card:hover .neon-card__title,
+  .neon-card:focus-within .neon-card__title {
+    animation: none;
+    color: #fff;
+    text-shadow:
+      0.8px 0 rgba(255, 46, 136, 0.22),
+      -0.8px 0 rgba(53, 230, 255, 0.22),
+      0 0 2px rgba(255, 255, 255, 0.6),
+      0 0 12px var(--card-hue);
+  }
+
+  .neon-tile img {
+    filter: none;
+    transition: none;
+  }
+
+  .neon-feed-status__dots span {
+    animation: none;
+  }
+}

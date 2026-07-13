@@ -1,0 +1,7 @@
+{
+  "app": "tsx infra/bin/media-stack.ts",
+  "context": {
+    "region": "eu-west-2",
+    "contactAttachmentExpirationDays": 30
+  }
+}

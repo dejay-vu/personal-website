@@ -1,0 +1,160 @@
+name: Finalize Production Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Exact draft release tag (vX.Y.Z)
+        required: true
+        type: string
+      vercel_deployment_id:
+        description: Exact new production deployment ID
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  checks: read
+  contents: write
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    if: github.repository == 'dejay-vu/personal-website' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 25
+    env:
+      PRODUCTION_DOMAIN: ${{ vars.PRODUCTION_DOMAIN }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      VERCEL_DEPLOYMENT_ID: ${{ inputs.vercel_deployment_id }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: refs/tags/${{ inputs.tag }}
+      - name: Verify trusted draft release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          RELEASE_COMMIT_SHA="$(git rev-parse HEAD)"
+          test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$RELEASE_COMMIT_SHA"
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+          test "$RELEASE_COMMIT_SHA" = "$GITHUB_SHA"
+          test "$RELEASE_COMMIT_SHA" = "$(git rev-parse refs/remotes/origin/main)"
+          test "$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isDraft --jq '.isDraft')" = 'true'
+          echo "RELEASE_COMMIT_SHA=$RELEASE_COMMIT_SHA" >> "$GITHUB_ENV"
+      - name: Configure ephemeral evidence paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "RELEASE_CDK_TEMPLATE_PATH=$RUNNER_TEMP/release-cdk/ContactAttachmentsStack.template.json"
+            echo "RELEASE_PROVENANCE_PATH=$RUNNER_TEMP/release-provenance.json"
+            echo "RELEASE_VERIFICATION_PATH=$RUNNER_TEMP/release-verification.json"
+          } >> "$GITHUB_ENV"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - run: corepack npm ci
+      - run: corepack npm run check:public-tree
+      - run: corepack npm run check:migrations
+      - run: corepack npm run check:aws-contract
+      - name: Require successful CI for the release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          runs="$(gh api --method GET \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$RELEASE_COMMIT_SHA" \
+            -f status=completed -f per_page=20)"
+          run_id="$(jq -r --arg sha "$RELEASE_COMMIT_SHA" \
+            '[.workflow_runs[] | select(
+              .head_sha == $sha and .head_branch == "main" and
+              .event == "push" and .conclusion == "success"
+            )] | sort_by(.run_number) | last | .id // empty' <<< "$runs")"
+          test -n "$run_id"
+          jobs="$(gh api \
+            "repos/$GITHUB_REPOSITORY/actions/runs/$run_id/jobs?per_page=100")"
+          for name in checks infra-synth browser; do
+            test "$(jq -r --arg name "$name" \
+              'any(.jobs[]; .name == $name and .conclusion == "success")' \
+              <<< "$jobs")" = 'true'
+          done
+      - name: Mask production database identity in logs
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+        run: corepack npm run db:mask-logs
+      - name: Verify production migration ledger and schema
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          PRODUCTION_DATABASE_FINGERPRINT: ${{ secrets.PRODUCTION_DATABASE_FINGERPRINT }}
+        run: |
+          corepack npm run db:migrate:status
+          corepack npm run db:migrate:preflight
+          corepack npm run db:migrate:diff
+      - name: Synthesize a fresh Contact template
+        run: >-
+          corepack npm run cdk -- synth ContactAttachmentsStack --quiet
+          --output "$RUNNER_TEMP/release-cdk"
+      - name: Generate deterministic source provenance
+        run: corepack npm run release:provenance
+      - name: Verify the exact Vercel production deployment before smoke tests
+        env:
+          RELEASE_VERIFICATION_PREFLIGHT: 'true'
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: corepack npm run release:verify-vercel
+      - name: Smoke-test production routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PRODUCTION_DOMAIN" =~ ^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$ ]]
+          for path in / /darkroom /field-notes /the-lab /api/photos /api/notes; do
+            result="$(curl --silent --show-error --retry 3 --max-time 20 \
+              --output /dev/null --write-out '%{http_code} %{url_effective}' \
+              "https://${PRODUCTION_DOMAIN}${path}")"
+            read -r status effective_url <<< "$result"
+            [[ "$status" =~ ^2[0-9][0-9]$ ]]
+            test "$effective_url" = "https://${PRODUCTION_DOMAIN}${path}"
+          done
+      - name: Re-verify deployment and write runtime evidence
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: corepack npm run release:verify-vercel
+      - name: Attach evidence and publish the draft Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/main:refs/remotes/origin/main
+          test "$RELEASE_COMMIT_SHA" = "$(git rev-parse refs/remotes/origin/main)"
+          existing="$RUNNER_TEMP/existing-release-assets"
+          mkdir -p "$existing"
+          for asset in "$RELEASE_PROVENANCE_PATH" "$RELEASE_VERIFICATION_PATH"; do
+            name="$(basename "$asset")"
+            if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --json assets --jq '.assets[].name' | grep -Fxq "$name"; then
+              gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+                --pattern "$name" --dir "$existing" --clobber
+              cmp "$asset" "$existing/$name"
+            else
+              gh release upload "$RELEASE_TAG" "$asset" \
+                --repo "$GITHUB_REPOSITORY"
+            fi
+          done
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --draft=false

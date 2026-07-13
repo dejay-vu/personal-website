@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "corepack npm run build",
+  "crons": [
+    {
+      "path": "/api/cron/storage-deletions",
+      "schedule": "0 0 * * *"
+    }
+  ],
+  "installCommand": "corepack npm ci"
+}

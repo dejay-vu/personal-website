@@ -1,0 +1,224 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["relationJoins"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Category {
+  slug  String @id
+  name  String
+  notes Note[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model MediaAsset {
+  id          String  @id @default(cuid())
+  originalKey String  @unique
+  mimeType    String
+  width       Int?
+  height      Int?
+  blurDataURL String
+  sizeBytes   Int?
+  sha256      String?
+
+  noteCover Note?  @relation("NoteCoverMedia")
+  photo     Photo?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sha256])
+  @@map("media_assets")
+}
+
+model Note {
+  id                 String     @id @default(cuid())
+  slug               String     @unique
+  coverMedia         MediaAsset @relation("NoteCoverMedia", fields: [coverMediaId], references: [id])
+  coverMediaId       String     @unique
+  title              String
+  seoTitle           String?
+  abstract           String
+  content            String     @db.Text
+  publishedAt        DateTime
+  wordCount          Int
+  readingTime        Int
+  categories         Category[]
+  published          Boolean    @default(true)
+  archivedAt         DateTime?
+  archivedByGithubId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, archivedAt, publishedAt, id])
+  @@map("notes")
+}
+
+model Photo {
+  id                 String               @id @default(cuid())
+  slug               String               @unique
+  mediaAsset         MediaAsset           @relation(fields: [mediaAssetId], references: [id])
+  mediaAssetId       String               @unique
+  title              String               @default("untitled")
+  tags               PhotoTagAssignment[]
+  archivedAt         DateTime?
+  archivedByGithubId String?
+
+  // EXIF info
+  fileType              String?
+  make                  String?
+  model                 String?
+  orientation           String?
+  height                Int?
+  width                 Int?
+  brightness            String?
+  exposureBias          String?
+  exposureTime          String?
+  exposureMode          String?
+  exposureProgram       String?
+  fNumber               String?
+  focalLength           String?
+  focalLengthIn35mmFilm String?
+  iso                   String?
+  lensMake              String?
+  lensModel             String?
+  capturedAt            DateTime? @map("dateTime")
+  dateTimeOriginal      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([archivedAt, createdAt, id])
+  @@index([capturedAt])
+  @@map("photos")
+}
+
+model PhotoTag {
+  id     String               @id @default(cuid())
+  field  String
+  value  String
+  label  String
+  slug   String
+  photos PhotoTagAssignment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([field, slug])
+  @@index([slug])
+  @@map("photo_tags")
+}
+
+model PhotoTagAssignment {
+  photo   Photo    @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  photoId String
+  tag     PhotoTag @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId   String
+
+  createdAt DateTime @default(now())
+
+  @@id([photoId, tagId])
+  @@index([tagId])
+  @@map("photo_tag_assignments")
+}
+
+enum AdminUploadKind {
+  PHOTO
+  NOTE_COVER
+}
+
+enum AdminUploadStatus {
+  STAGED
+  FINALIZED
+  ABORTED
+  FAILED
+}
+
+enum AdminAuditAction {
+  UPLOAD
+  UPDATE
+  ARCHIVE
+  RESTORE
+  PURGE
+  PUBLISH
+  UNPUBLISH
+  SET_COVER
+}
+
+model AdminUploadIntent {
+  id           String            @id @default(cuid())
+  uploadId     String            @unique
+  kind         AdminUploadKind
+  status       AdminUploadStatus @default(STAGED)
+  githubId     String
+  originalName String
+  stagingKey   String            @unique
+  finalKey     String?
+  mimeType     String
+  sizeBytes    Int
+  sha256       String?
+  error        String?
+  finalizedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([githubId, createdAt])
+  @@index([status, createdAt])
+  @@map("admin_upload_intents")
+}
+
+model AdminAuditLog {
+  id         String           @id @default(cuid())
+  action     AdminAuditAction
+  githubId   String
+  targetType String
+  targetId   String?
+  summary    String
+  metadata   Json?
+  success    Boolean          @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_logs")
+}
+
+enum StorageDeletionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model StorageDeletionJob {
+  id            String                @id @default(cuid())
+  payload       Json
+  reason        String
+  status        StorageDeletionStatus @default(PENDING)
+  attempts      Int                   @default(0)
+  lastError     String?
+  nextAttemptAt DateTime              @default(now())
+  completedAt   DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@map("storage_deletion_jobs")
+}

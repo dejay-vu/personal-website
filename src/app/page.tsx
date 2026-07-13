@@ -1,0 +1,50 @@
+import { preload } from 'react-dom';
+
+import { getPublishedNotesCount, getPublishedNotesPage } from '@/modules/notes';
+import { getPhotosCount, getPhotosPage } from '@/modules/photos';
+
+import { createPersonJsonLd, createWebsiteJsonLd } from '@/lib/seo';
+
+import { JsonLd } from '@/components/JsonLd';
+import { NeonLanding } from '@/components/home';
+
+// The single page previews the feeds at the neon-spine junction (latest
+// note titles run the Field Notes marquee, latest three photos hang in the
+// Darkroom row) and enters the full /field-notes and /darkroom pages (endless
+// scroll, search, filters) through the branch signs. Statically rendered +
+// revalidated hourly; underlying reads are unstable_cache'd on the
+// 'notes'/'photos' tags, so admin edits invalidate this page too.
+export const dynamic = 'force-static';
+export const revalidate = 3600;
+
+// The Field Notes marquee cycles the three latest note titles.
+const HOME_NOTES_PREVIEW = 3;
+// The Darkroom row hangs the latest three prints.
+const HOME_PHOTOS_PREVIEW = 3;
+
+export default async function Home() {
+  preload('/background.webp', {
+    as: 'image',
+    fetchPriority: 'high',
+    type: 'image/webp',
+  });
+
+  const [notesPage, photosPage, notesCount, photosCount] = await Promise.all([
+    getPublishedNotesPage({ limit: HOME_NOTES_PREVIEW }),
+    getPhotosPage({ filters: {}, limit: HOME_PHOTOS_PREVIEW }),
+    getPublishedNotesCount(),
+    getPhotosCount(),
+  ]);
+
+  return (
+    <>
+      <JsonLd data={[createPersonJsonLd(), createWebsiteJsonLd()]} />
+      <NeonLanding
+        notes={notesPage.notes}
+        photos={photosPage.photos}
+        notesCount={notesCount}
+        photosCount={photosCount}
+      />
+    </>
+  );
+}

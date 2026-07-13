@@ -1,0 +1,74 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+/test-results/
+/playwright-report/
+/blob-report/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# aws cdk
+/cdk.out/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# vscode
+.vscode
+
+# prisma generated client
+/src/generated/prisma
+
+# generated migration manifests
+/migration-manifests/
+
+# generated release evidence
+/.release-evidence/
+
+# local domain backup material
+/domain-backups/
+
+# local Agent/MCP/tooling material — never publish
+/.agents/
+/.claude/
+/.codex/
+/.roo/
+/.playwright-mcp/
+/.mcp.json
+/AGENTS.md
+/CLAUDE.md
+/CONTEXT.md
+/SKILL.md
+/skills-lock.json
+/.vscode/mcp.json
+/docs/plans-local/
+/docs/superpowers/

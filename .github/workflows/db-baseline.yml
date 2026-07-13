@@ -1,0 +1,65 @@
+name: Register Production Database Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      approval:
+        description: 00000000000000_baseline:<migration.sql sha256>
+        required: true
+        type: string
+      restore_id:
+        description: Non-sensitive Neon restore branch or backup ID only (never a URL or token)
+        required: true
+        type: string
+      restore_created_at:
+        description: Canonical UTC timestamp, for example 2026-07-12T15:30:00.000Z
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-database
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: Production
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - name: Reject private/local material
+        run: node scripts/check-public-tree.mjs
+      - name: Validate migration history
+        run: node scripts/check-migration-history.mjs
+      - run: corepack npm ci
+      - name: Mask production database identity in logs
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+        run: corepack npm run db:mask-logs
+      - name: Register and verify the one-time baseline
+        env:
+          POSTGRES_URL_NON_POOLING: ${{ secrets.POSTGRES_URL_NON_POOLING }}
+          PRODUCTION_BASELINE_APPROVAL: ${{ inputs.approval }}
+          PRODUCTION_DATABASE_FINGERPRINT: ${{ secrets.PRODUCTION_DATABASE_FINGERPRINT }}
+          PRODUCTION_RESTORE_EVIDENCE_CREATED_AT: ${{ inputs.restore_created_at }}
+          PRODUCTION_RESTORE_EVIDENCE_ID: ${{ inputs.restore_id }}
+        run: corepack npm run db:baseline:resolve
+      - name: Write migration provenance
+        run: corepack npm run db:migration:manifest
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: database-baseline-${{ github.sha }}-${{ github.run_attempt }}
+          path: migration-manifests/migrations.json
+          if-no-files-found: error
+          retention-days: 30

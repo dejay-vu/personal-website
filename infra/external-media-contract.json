@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "storageLayoutVersion": 1,
+  "region": "eu-west-2",
+  "managedByThisRepository": false,
+  "originals": {
+    "owner": "external-unmanaged",
+    "bucketName": "dejayvu",
+    "cloudFrontDistributionId": "E2YK65XOVYC5X2",
+    "publicHost": "s3.dejayvu.com",
+    "versioningState": "Enabled"
+  },
+  "transformed": {
+    "ownerStack": "ImgTransformationStack",
+    "bucketName": "imgtransformationstack-s3transformedimagebucket6d8-xhht2t8r5fhr",
+    "cloudFrontDistributionId": "E3NIJGE6689HH7",
+    "publicHost": "resizer.dejayvu.com",
+    "versioningState": "NeverEnabled",
+    "cacheExpirationDays": 90
+  },
+  "imageOptimization": {
+    "ownerStack": "ImgTransformationStack",
+    "functionName": "ImgTransformationStack-imageoptimization4C49F079-PCMQS4bVa2AC",
+    "environment": {
+      "originalImageBucketName": "dejayvu",
+      "transformedImageBucketName": "imgtransformationstack-s3transformedimagebucket6d8-xhht2t8r5fhr",
+      "maxImageSize": "50000000",
+      "transformedImageCacheTTL": "max-age=31622400"
+    }
+  }
+}

@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_USER: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      POSTGRES_URL_NON_POOLING: postgres://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - name: Reject private/local material
+        run: node scripts/check-public-tree.mjs
+      - name: Validate migration history
+        run: node scripts/check-migration-history.mjs
+      - name: Enforce append-only migrations
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-migration-history.mjs --base "$BASE_SHA"
+      - name: Enforce append-only migrations on main
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags --depth=1 \
+            "https://github.com/${GITHUB_REPOSITORY}.git" "$BASE_SHA"
+          node scripts/check-migration-history.mjs --base "$BASE_SHA"
+      - run: corepack npm ci
+      - name: Validate GitHub Actions workflows
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: corepack npm run check:workflows
+      - run: corepack npm exec -- prisma generate
+      - run: corepack npm run format:check
+      - run: corepack npm run check:naming
+      - run: corepack npm run lint
+      - run: corepack npm run typecheck
+      - run: corepack npm test
+      - run: corepack npm run test:integration
+      - run: corepack npm run build
+
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - run: corepack npm ci
+      - name: Validate branch commits
+        run: corepack npm exec -- commitlint --from "$BASE_SHA" --to "$HEAD_SHA" --verbose
+      - name: Validate pull-request title
+        run: printf '%s\n' "$PR_TITLE" | corepack npm exec -- commitlint --verbose
+
+  infra-synth:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - run: corepack npm ci
+      - run: corepack npm run check:aws-contract
+      - run: corepack npm run infra:synth
+
+  browser:
+    needs: checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_USER: ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci -d ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+      POSTGRES_URL_NON_POOLING: postgres://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+      - run: corepack enable npm
+      - run: corepack npm ci
+      - run: corepack npm exec -- playwright install --with-deps chromium
+      - run: corepack npm run test:e2e
