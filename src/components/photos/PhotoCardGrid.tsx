@@ -11,10 +11,10 @@ import { getPhotoDisplayDimensions } from './photoDimensions';
 const EAGER_PHOTO_COUNT = 9;
 const PRIORITY_PHOTO_COUNT = 3;
 
-// Justified rows: every photo carries its true aspect ratio as --ar (the CSS
-// does the row math). Every ~9th landscape becomes a full-width magenta
-// breaker. Both are pure functions of the global index, so endless-scroll
-// appends never reflow existing rows.
+// Justified rows: every photo carries its true aspect ratio as --ar and the
+// CSS does the row math. Completed rows resolve to the same gallery edges;
+// the final row stays at the target row height instead of enlarging a sparse
+// set of photos to fill a wide viewport.
 function getAspectRatio(photo: PhotoListItem) {
   const { width, height } = getPhotoDisplayDimensions(photo);
 
@@ -22,8 +22,7 @@ function getAspectRatio(photo: PhotoListItem) {
 }
 
 // Width ≈ rowHeight × ratio; row heights top out around --jg-base × 1.4.
-function getSizes(ar: number, breaker: boolean) {
-  if (breaker) return '(max-width: 1280px) 92vw, 1200px';
+function getSizes(ar: number) {
   if (ar < 1) return '(max-width: 640px) 48vw, (max-width: 1024px) 26vw, 20vw';
 
   return '(max-width: 640px) 92vw, (max-width: 1024px) 48vw, 36vw';
@@ -42,7 +41,6 @@ export function PhotoCardGrid({
     <div className="neon-justified">
       {photos.map((photo, index) => {
         const ar = getAspectRatio(photo);
-        const breaker = index % 9 === 8 && ar >= 1.2;
 
         return (
           <PhotoCard
@@ -53,11 +51,9 @@ export function PhotoCardGrid({
               q,
             })}
             eager={index < EAGER_PHOTO_COUNT}
-            breaker={breaker}
-            featured={breaker}
             photo={photo}
             priority={index < PRIORITY_PHOTO_COUNT}
-            sizes={getSizes(ar, breaker)}
+            sizes={getSizes(ar)}
             style={{ '--ar': ar } as CSSProperties}
           />
         );

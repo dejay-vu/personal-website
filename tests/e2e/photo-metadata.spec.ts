@@ -9,6 +9,302 @@ test.beforeEach(async ({ page }) => {
   await installMediaRoute(page);
 });
 
+test('wide Darkroom rows align without stretching a sparse final row', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'desktop-chromium',
+    'Wide-screen gallery geometry is covered by the desktop browser.',
+  );
+  await page.setViewportSize({ width: 1920, height: 900 });
+  await page.goto('/darkroom');
+
+  const layout = await page.locator('.neon-justified').evaluate((grid) => {
+    const gridBounds = grid.getBoundingClientRect();
+    const rowHeightProbe = document.createElement('span');
+    rowHeightProbe.style.cssText =
+      'position:absolute;visibility:hidden;width:var(--jg-base);height:0';
+    grid.append(rowHeightProbe);
+    const targetRowHeight = rowHeightProbe.getBoundingClientRect().width;
+    rowHeightProbe.remove();
+    const rows: Array<{
+      height: number;
+      left: number;
+      right: number;
+      top: number;
+    }> = [];
+
+    for (const tile of grid.querySelectorAll<HTMLElement>(':scope > article')) {
+      const bounds = tile.getBoundingClientRect();
+      let row = rows.find(
+        (candidate) => Math.abs(candidate.top - bounds.top) < 1,
+      );
+      if (!row) {
+        row = {
+          height: bounds.height,
+          left: bounds.left,
+          right: bounds.right,
+          top: bounds.top,
+        };
+        rows.push(row);
+      } else {
+        row.height = Math.max(row.height, bounds.height);
+        row.left = Math.min(row.left, bounds.left);
+        row.right = Math.max(row.right, bounds.right);
+      }
+    }
+
+    return {
+      grid: { left: gridBounds.left, right: gridBounds.right },
+      targetRowHeight,
+      rows,
+    };
+  });
+
+  expect(layout.rows.length).toBeGreaterThan(1);
+  for (const row of layout.rows.slice(0, -1)) {
+    expect(row.left).toBeCloseTo(layout.grid.left, 0);
+    expect(row.right).toBeCloseTo(layout.grid.right, 0);
+  }
+  const finalRow = layout.rows.at(-1);
+  expect(finalRow).toBeDefined();
+  expect(finalRow!.left).toBeCloseTo(layout.grid.left, 0);
+  expect(finalRow!.right).toBeLessThanOrEqual(layout.grid.right + 1);
+  expect(finalRow!.height).toBeLessThanOrEqual(layout.targetRowHeight * 1.05);
+  await expect(page.locator('[data-breaker], [data-featured]')).toHaveCount(0);
+});
+
+test('a photo click opens one animated HeroUI modal before its RSC completes', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  const response = await page.request.get('/api/photos?limit=1');
+  expect(response.ok()).toBe(true);
+  const photo = ((await response.json()) as PhotosPage).photos[0];
+  if (!photo) throw new Error('A published Photo fixture is required.');
+  const targetPath = `/darkroom/${photo.slug}`;
+  let releaseRequest: () => void = () => undefined;
+  const requestGate = new Promise<void>((resolve) => {
+    releaseRequest = resolve;
+  });
+  let resolveRequestStarted: () => void = () => undefined;
+  const requestStarted = new Promise<void>((resolve) => {
+    resolveRequestStarted = resolve;
+  });
+  const handler = async (route: import('@playwright/test').Route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const headers = request.headers();
+    const isTargetRsc =
+      url.pathname === targetPath &&
+      (url.searchParams.has('_rsc') || headers.rsc === '1');
+    if (!isTargetRsc) {
+      await route.fallback();
+      return;
+    }
+    const isPrefetch =
+      headers['next-router-prefetch'] !== undefined ||
+      headers.purpose === 'prefetch' ||
+      headers['sec-purpose']?.includes('prefetch');
+    if (isPrefetch) {
+      await route.abort();
+      return;
+    }
+
+    resolveRequestStarted();
+    await requestGate;
+    await route.fallback();
+  };
+
+  await page.route('**/*', handler);
+  try {
+    await page.goto('/darkroom');
+    await page.evaluate(() => {
+      type Probe = {
+        animations: { backdrop: number; container: number };
+        mounts: { backdrop: number; dialog: number };
+      };
+      const state = window as typeof window & {
+        __photoModalProbe?: Probe;
+      };
+      const probe: Probe = {
+        animations: { backdrop: 0, container: 0 },
+        mounts: { backdrop: 0, dialog: 0 },
+      };
+      state.__photoModalProbe = probe;
+      const seen = new WeakSet<Element>();
+      const recordMount = (element: Element) => {
+        if (seen.has(element)) return;
+        const slot = element.getAttribute('data-slot');
+        if (slot === 'modal-backdrop') probe.mounts.backdrop += 1;
+        if (slot === 'modal-dialog') probe.mounts.dialog += 1;
+        seen.add(element);
+      };
+      const observer = new MutationObserver((records) => {
+        for (const record of records) {
+          for (const node of record.addedNodes) {
+            if (!(node instanceof Element)) continue;
+            recordMount(node);
+            for (const element of node.querySelectorAll('[data-slot]')) {
+              recordMount(element);
+            }
+          }
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      document.addEventListener(
+        'animationstart',
+        (event) => {
+          if (!(event.target instanceof Element)) return;
+          const slot = event.target.getAttribute('data-slot');
+          if (slot === 'modal-backdrop') probe.animations.backdrop += 1;
+          if (slot === 'modal-container') probe.animations.container += 1;
+        },
+        true,
+      );
+    });
+    const card = page.locator(`a[href^="${targetPath}"]`).first();
+    await card.click({ noWaitAfter: true });
+    const dialog = page.getByRole('dialog', { name: 'Photo preview' });
+    const backdrop = page.locator('[data-slot="modal-backdrop"]');
+    const frame = dialog.locator('[data-photo-modal-frame]');
+    const image = dialog.locator('[data-photo-modal-image]');
+    await expect(dialog).toBeVisible();
+    await expect(backdrop).toHaveCount(1);
+    await expect(page.locator('[data-route-progress]')).toHaveCount(0);
+    await expect(page.locator('[data-photo-modal-pending]')).toHaveCount(0);
+    await expect(dialog).toHaveAttribute('data-photo-modal-phase', 'opening');
+    await requestStarted;
+    await expect(page).toHaveURL(/\/darkroom$/);
+    await expect
+      .poll(() =>
+        image.evaluate(
+          (node) =>
+            (node as HTMLImageElement).complete &&
+            (node as HTMLImageElement).naturalWidth > 0,
+        ),
+      )
+      .toBe(true);
+    await backdrop.evaluate((node) =>
+      node.setAttribute('data-e2e-modal-instance', 'backdrop'),
+    );
+    await dialog.evaluate((node) =>
+      node.setAttribute('data-e2e-modal-instance', 'dialog'),
+    );
+    await frame.evaluate((node) =>
+      node.setAttribute('data-e2e-modal-instance', 'frame'),
+    );
+    await image.evaluate((node) =>
+      node.setAttribute('data-e2e-modal-instance', 'image'),
+    );
+
+    releaseRequest();
+    await expect(page).toHaveURL(new RegExp(`${targetPath}$`));
+    await expect(dialog).toHaveAttribute('data-photo-modal-phase', 'confirmed');
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+        ),
+    );
+    await expect(backdrop).toHaveAttribute(
+      'data-e2e-modal-instance',
+      'backdrop',
+    );
+    await expect(dialog).toHaveAttribute('data-e2e-modal-instance', 'dialog');
+    await expect(frame).toHaveAttribute('data-e2e-modal-instance', 'frame');
+    await expect(image).toHaveAttribute('data-e2e-modal-instance', 'image');
+    expect(
+      await page.evaluate(() => {
+        const state = window as typeof window & {
+          __photoModalProbe?: {
+            animations: { backdrop: number; container: number };
+            mounts: { backdrop: number; dialog: number };
+          };
+        };
+        return state.__photoModalProbe;
+      }),
+    ).toEqual({
+      animations: { backdrop: 1, container: 1 },
+      mounts: { backdrop: 1, dialog: 1 },
+    });
+  } finally {
+    releaseRequest();
+    await page.unroute('**/*', handler);
+  }
+});
+
+test('closing the modal before its RSC completes cancels the navigation', async ({
+  page,
+}) => {
+  const response = await page.request.get('/api/photos?limit=1');
+  expect(response.ok()).toBe(true);
+  const photo = ((await response.json()) as PhotosPage).photos[0];
+  if (!photo) throw new Error('A published Photo fixture is required.');
+  const targetPath = `/darkroom/${photo.slug}`;
+  let releaseRequest: () => void = () => undefined;
+  const requestGate = new Promise<void>((resolve) => {
+    releaseRequest = resolve;
+  });
+  let resolveRequestStarted: () => void = () => undefined;
+  const requestStarted = new Promise<void>((resolve) => {
+    resolveRequestStarted = resolve;
+  });
+
+  const handler = async (route: import('@playwright/test').Route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const headers = request.headers();
+    const isTargetRsc =
+      url.pathname === targetPath &&
+      (url.searchParams.has('_rsc') || headers.rsc === '1');
+    if (!isTargetRsc) {
+      await route.fallback();
+      return;
+    }
+    if (
+      headers['next-router-prefetch'] !== undefined ||
+      headers.purpose === 'prefetch' ||
+      headers['sec-purpose']?.includes('prefetch')
+    ) {
+      await route.abort();
+      return;
+    }
+
+    resolveRequestStarted();
+    await requestGate;
+    await route.fallback();
+  };
+
+  await page.route('**/*', handler);
+  try {
+    await page.goto('/');
+    await page.goto('/darkroom');
+    await page.locator(`a[href^="${targetPath}"]`).first().click({
+      noWaitAfter: true,
+    });
+    await requestStarted;
+    const dialog = page.getByRole('dialog', { name: 'Photo preview' });
+    await expect(dialog).toBeVisible();
+    await expect(page).toHaveURL(/\/darkroom$/);
+
+    await page.getByRole('button', { name: 'Close photo' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/darkroom$/);
+    await expect(
+      page.locator('[data-photo-modal-coordinator]'),
+    ).toHaveAttribute('data-photo-modal-phase', 'closed');
+
+    releaseRequest();
+    await page.waitForTimeout(300);
+    await expect(page).toHaveURL(/\/darkroom$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  } finally {
+    releaseRequest();
+    await page.unroute('**/*', handler);
+  }
+});
+
 test('Darkroom interceptor renders an image-only fitted modal', async ({
   page,
 }) => {
@@ -111,14 +407,19 @@ test('Photo modal dismissal preserves backdrop, Escape, and history behavior', a
 }) => {
   const open = async () => {
     await page.goto('/darkroom');
-    await page
+    const card = page
       .locator('a[href^="/darkroom/"]')
       .filter({ has: page.locator('img') })
-      .first()
-      .click();
+      .first();
+    const href = await card.getAttribute('href');
+    expect(href).toBeTruthy();
+    await card.click();
     await expect(
       page.getByRole('dialog', { name: 'Photo preview' }),
     ).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${href}$`));
+
+    return href!;
   };
 
   await open();
@@ -129,10 +430,49 @@ test('Photo modal dismissal preserves backdrop, Escape, and history behavior', a
   await page.mouse.click(4, 4);
   await expect(page).toHaveURL(/\/darkroom$/);
 
-  await open();
+  const targetHref = await open();
   await page.goBack();
   await expect(page).toHaveURL(/\/darkroom$/);
   await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  await page.goForward();
+  await expect(page).toHaveURL(new RegExp(`${targetHref}$`));
+  const restoredDialog = page.getByRole('dialog', { name: 'Photo preview' });
+  await expect(restoredDialog).toBeVisible();
+  await expect(restoredDialog).toHaveAttribute(
+    'data-photo-modal-slug',
+    targetHref.split('/').at(-1)!,
+  );
+});
+
+test('modified Photo clicks keep native canonical navigation', async ({
+  context,
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'desktop-chromium',
+    'Control-click popup behavior is covered by the desktop browser.',
+  );
+  await page.goto('/darkroom');
+  const card = page
+    .locator('a[href^="/darkroom/"]')
+    .filter({ has: page.locator('img') })
+    .first();
+  const href = await card.getAttribute('href');
+  expect(href).toBeTruthy();
+
+  const popupPromise = context.waitForEvent('page');
+  await card.click({ modifiers: ['Control'] });
+  const popup = await popupPromise;
+  await popup.waitForLoadState('domcontentloaded');
+
+  await expect(page).toHaveURL(/\/darkroom$/);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('[data-route-progress]')).toHaveCount(0);
+  await expect(popup).toHaveURL(new RegExp(`${href}$`));
+  await expect(popup.getByRole('dialog')).toHaveCount(0);
+  await expect(popup.locator('article')).toBeVisible();
+  await popup.close();
 });
 
 test('Photo cards expose the shared compact EXIF on hover and focus', async ({

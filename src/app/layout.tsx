@@ -12,6 +12,7 @@ import { absoluteUrl, seoConfig } from '@/lib/seo';
 
 import { AppShell } from '@/components/AppShell';
 import Providers from '@/components/Providers';
+import { PhotoModalCoordinator } from '@/components/photos/modal/PhotoModalCoordinator';
 
 export const metadata: Metadata = {
   title: {
@@ -165,8 +166,10 @@ try {
         suppressHydrationWarning
       >
         <Providers>
-          <AppShell>{children}</AppShell>
-          {modal}
+          <PhotoModalCoordinator>
+            <AppShell>{children}</AppShell>
+            {modal}
+          </PhotoModalCoordinator>
           <SpeedInsights />
           <Analytics />
         </Providers>

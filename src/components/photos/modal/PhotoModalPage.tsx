@@ -1,7 +1,17 @@
+'use client';
+
+import { useLayoutEffect } from 'react';
+
 import type { PhotoListItem } from '@/modules/photos/types';
 
-import { PhotoModal } from './PhotoModal';
+import { usePhotoModalCoordinator } from './PhotoModalCoordinator';
 
 export default function PhotoModalPage({ photo }: { photo: PhotoListItem }) {
-  return <PhotoModal photo={photo} />;
+  const { routeReady } = usePhotoModalCoordinator();
+
+  useLayoutEffect(() => {
+    routeReady(photo);
+  }, [photo, routeReady]);
+
+  return null;
 }
