@@ -51,12 +51,8 @@ export function assertStorageDeletionConfigured(
   const transformedDistributionId = firstConfiguredValue(environment, [
     'CLOUDFRONT_TRANSFORMED_DISTRIBUTION_ID',
   ]);
-  const accessKeyId = environment.AWS_ACCESS_KEY_ID?.trim();
-  const secretAccessKey = environment.AWS_SECRET_ACCESS_KEY?.trim();
   const missing = [
     !region && 'AWS_REGION/AWS_DEFAULT_REGION/NEXT_PUBLIC_S3_REGION',
-    !accessKeyId && 'AWS_ACCESS_KEY_ID',
-    !secretAccessKey && 'AWS_SECRET_ACCESS_KEY',
     !expectedBucketOwner && 'AWS_EXPECTED_ACCOUNT_ID',
     !originalBucketName && 'S3_BUCKET_NAME/NEXT_PUBLIC_S3_BUCKET_NAME',
     !transformedBucketName &&

@@ -479,14 +479,8 @@ async function main(): Promise<void> {
   );
   const region = requiredEnv('AWS_REGION', 'NEXT_PUBLIC_S3_REGION');
   const expectedBucketOwner = requiredEnv('AWS_EXPECTED_ACCOUNT_ID');
-  const sessionToken = process.env.AWS_SESSION_TOKEN?.trim();
   const s3 = new S3Client({
     region,
-    credentials: {
-      accessKeyId: requiredEnv('AWS_ACCESS_KEY_ID'),
-      secretAccessKey: requiredEnv('AWS_SECRET_ACCESS_KEY'),
-      ...(sessionToken ? { sessionToken } : {}),
-    },
   });
 
   try {

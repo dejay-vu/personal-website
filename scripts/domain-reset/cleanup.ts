@@ -218,13 +218,7 @@ async function main() {
     verification.cleanupContract,
     cleanupContract,
   );
-  const sessionToken = process.env.AWS_SESSION_TOKEN?.trim();
-  const credentials = {
-    accessKeyId: requiredEnv('AWS_ACCESS_KEY_ID'),
-    secretAccessKey: requiredEnv('AWS_SECRET_ACCESS_KEY'),
-    ...(sessionToken ? { sessionToken } : {}),
-  };
-  const identity = await new STSClient({ credentials, region }).send(
+  const identity = await new STSClient({ region }).send(
     new GetCallerIdentityCommand({}),
   );
   assertExpectedNonRootAwsIdentity({
@@ -234,10 +228,7 @@ async function main() {
     expectedPrincipalArnPrefix: expectedPrincipalPrefix,
   });
 
-  const s3 = new S3Client({
-    region,
-    credentials,
-  });
+  const s3 = new S3Client({ region });
 
   try {
     const inventory = [] as {

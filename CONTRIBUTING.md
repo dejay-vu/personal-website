@@ -67,6 +67,13 @@ Persisted S3 key structure is versioned independently of product releases. `STOR
 
 Admin purge deliberately deletes every version and delete marker for the selected immutable original key. That product behavior is independent of the release structure contract. Never use an account root key for runtime or maintenance operations.
 
+For local AWS access, set `AWS_PROFILE` in the ignored `.env.local` and run
+`aws sso login --profile <name>` before starting the application. The Node SDK
+uses its default credential provider chain, so IAM Identity Center sessions are
+refreshed without exporting temporary keys into the repository environment.
+Hosted runtimes use a dedicated least-privilege identity supplied by their
+environment. Never persist an exported SSO session or use an account root key.
+
 ## Releases
 
 Release Please owns routine version bumps, `CHANGELOG.md`, `package.json`, the lockfile, and `.release-please-manifest.json`. Feature commits bump the minor version before 1.0, fixes bump patch, and breaking changes bump minor. Do not create competing manual version commits.

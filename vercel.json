@@ -1,6 +1,23 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "corepack npm run build",
+  "git": {
+    "deploymentEnabled": {
+      "build/*": false,
+      "chore/*": false,
+      "ci/*": false,
+      "dependabot/*": false,
+      "docs/*": false,
+      "feat/*": false,
+      "fix/*": false,
+      "perf/*": false,
+      "refactor/*": false,
+      "release-please--*": false,
+      "revert/*": false,
+      "style/*": false,
+      "test/*": false
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/storage-deletions",

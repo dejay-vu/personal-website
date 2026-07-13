@@ -39,11 +39,6 @@ const AWS_S3_REGION = firstConfiguredEnvironmentValue(
   'AWS_DEFAULT_REGION',
   'NEXT_PUBLIC_S3_REGION',
 );
-const AWS_ACCESS_KEY_ID = firstConfiguredEnvironmentValue('AWS_ACCESS_KEY_ID');
-const AWS_SECRET_ACCESS_KEY = firstConfiguredEnvironmentValue(
-  'AWS_SECRET_ACCESS_KEY',
-);
-const AWS_SESSION_TOKEN = firstConfiguredEnvironmentValue('AWS_SESSION_TOKEN');
 const AWS_EXPECTED_BUCKET_OWNER = firstConfiguredEnvironmentValue(
   'AWS_EXPECTED_ACCOUNT_ID',
 );
@@ -52,15 +47,13 @@ export const awsS3DefaultBucketName = AWS_S3_BUCKET_NAME;
 
 let s3Client: S3Client | null = null;
 
-// Lazy + validated: constructing the client at import with '' credentials
-// defers misconfiguration to a cryptic SDK error deep inside the first call.
+// Lazy + validated: configuration errors stay explicit while credentials are
+// resolved by the SDK's refreshable Node provider chain.
 function getS3Client() {
   if (s3Client) return s3Client;
 
   const missing = [
     !AWS_S3_REGION && 'AWS_REGION',
-    !AWS_ACCESS_KEY_ID && 'AWS_ACCESS_KEY_ID',
-    !AWS_SECRET_ACCESS_KEY && 'AWS_SECRET_ACCESS_KEY',
     !AWS_EXPECTED_BUCKET_OWNER && 'AWS_EXPECTED_ACCOUNT_ID',
   ].filter(Boolean);
 
@@ -73,11 +66,6 @@ function getS3Client() {
 
   s3Client = new S3Client({
     region: AWS_S3_REGION,
-    credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      ...(AWS_SESSION_TOKEN ? { sessionToken: AWS_SESSION_TOKEN } : {}),
-    },
   });
 
   return s3Client;

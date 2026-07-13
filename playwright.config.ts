@@ -23,6 +23,9 @@ export default defineConfig({
     env: {
       ADMIN_GITHUB_IDS: 'e2e-owner',
       AUTH_SECRET: 'e2e-auth-secret-not-for-production',
+      // Keep the owner health-route test deterministic and offline even when
+      // a developer's ignored .env.local contains a valid AWS profile.
+      AWS_RUNTIME_PRINCIPAL_ARN_PREFIX: 'e2e-health-disabled',
       NEXTAUTH_URL: baseURL,
     },
     reuseExistingServer: false,

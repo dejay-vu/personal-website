@@ -4,10 +4,8 @@ import test from 'node:test';
 import { assertStorageDeletionConfigured } from '../../src/modules/media/storageConfig';
 
 const configuredEnvironment = {
-  AWS_ACCESS_KEY_ID: 'access-key',
   AWS_EXPECTED_ACCOUNT_ID: '123456789012',
   AWS_REGION: 'eu-west-2',
-  AWS_SECRET_ACCESS_KEY: 'secret-key',
   CLOUDFRONT_ORIGINALS_DISTRIBUTION_ID: 'EORIGINALS123',
   CLOUDFRONT_TRANSFORMED_DISTRIBUTION_ID: 'ETRANSFORMED123',
   S3_BUCKET_NAME: 'original-media',
@@ -50,13 +48,13 @@ test('storage deletion preflight rejects incomplete configuration', () => {
     () =>
       assertStorageDeletionConfigured({
         ...configuredEnvironment,
-        AWS_ACCESS_KEY_ID: ' ',
+        AWS_EXPECTED_ACCOUNT_ID: ' ',
         CLOUDFRONT_TRANSFORMED_DISTRIBUTION_ID: undefined,
         TRANSFORMED_IMAGE_BUCKET_NAME: undefined,
       }),
     (error) => {
       assert.ok(error instanceof Error);
-      assert.match(error.message, /AWS_ACCESS_KEY_ID/);
+      assert.match(error.message, /AWS_EXPECTED_ACCOUNT_ID/);
       assert.match(error.message, /CLOUDFRONT_TRANSFORMED_DISTRIBUTION_ID/);
       assert.match(error.message, /TRANSFORMED_IMAGE_BUCKET_NAME/);
       return true;

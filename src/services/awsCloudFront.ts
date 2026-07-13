@@ -20,11 +20,6 @@ const AWS_REGION = firstConfiguredEnvironmentValue(
   'AWS_DEFAULT_REGION',
   'NEXT_PUBLIC_S3_REGION',
 );
-const AWS_ACCESS_KEY_ID = firstConfiguredEnvironmentValue('AWS_ACCESS_KEY_ID');
-const AWS_SECRET_ACCESS_KEY = firstConfiguredEnvironmentValue(
-  'AWS_SECRET_ACCESS_KEY',
-);
-const AWS_SESSION_TOKEN = firstConfiguredEnvironmentValue('AWS_SESSION_TOKEN');
 
 let cloudFrontClient: CloudFrontClient | null = null;
 const WILDCARD_INVALIDATION_INTERVAL_MS = 1_050;
@@ -34,11 +29,7 @@ let invalidationQueue: Promise<void> = Promise.resolve();
 function getCloudFrontClient() {
   if (cloudFrontClient) return cloudFrontClient;
 
-  const missing = [
-    !AWS_REGION && 'AWS_REGION',
-    !AWS_ACCESS_KEY_ID && 'AWS_ACCESS_KEY_ID',
-    !AWS_SECRET_ACCESS_KEY && 'AWS_SECRET_ACCESS_KEY',
-  ].filter(Boolean);
+  const missing = [!AWS_REGION && 'AWS_REGION'].filter(Boolean);
 
   if (missing.length > 0) {
     throw new Error(
@@ -48,11 +39,6 @@ function getCloudFrontClient() {
 
   cloudFrontClient = new CloudFrontClient({
     region: AWS_REGION,
-    credentials: {
-      accessKeyId: AWS_ACCESS_KEY_ID,
-      secretAccessKey: AWS_SECRET_ACCESS_KEY,
-      ...(AWS_SESSION_TOKEN ? { sessionToken: AWS_SESSION_TOKEN } : {}),
-    },
   });
 
   return cloudFrontClient;
