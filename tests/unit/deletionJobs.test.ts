@@ -8,10 +8,8 @@ import {
 } from '../../src/modules/media/deletionJobs';
 
 const configuredEnvironment = {
-  AWS_ACCESS_KEY_ID: 'access-key',
   AWS_EXPECTED_ACCOUNT_ID: '123456789012',
   AWS_REGION: 'eu-west-2',
-  AWS_SECRET_ACCESS_KEY: 'secret-key',
   CLOUDFRONT_ORIGINALS_DISTRIBUTION_ID: 'EORIGINALS123',
   CLOUDFRONT_TRANSFORMED_DISTRIBUTION_ID: 'ETRANSFORMED123',
   S3_BUCKET_NAME: 'original-media',

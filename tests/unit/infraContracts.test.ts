@@ -136,6 +136,12 @@ test('AWS infrastructure keeps media as a versioned external structure contract'
     contract.imageOptimization.environment.transformedImageBucketName,
     contract.transformed.bucketName,
   );
+  const infrastructureGuide = readFileSync('infra/README.md', 'utf8');
+  assert.match(infrastructureGuide, /owner-only runtime health endpoint/);
+  assert.match(infrastructureGuide, /`s3:ListBucket`/);
+  assert.match(infrastructureGuide, /exact `media\/health-check\/` prefix/);
+  assert.match(infrastructureGuide, /`s3:max-keys` no greater\s+than `1`/);
+  assert.match(infrastructureGuide, /must not grant object reads/);
   assert.deepEqual(Object.keys(cdk.context).sort(), [
     'contactAttachmentExpirationDays',
     'region',

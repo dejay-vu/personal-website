@@ -116,6 +116,11 @@ the application. Permanent Admin purge additionally requires:
 - `s3:DeleteObjectVersion` on original media objects;
 - `cloudfront:CreateInvalidation` on the two recorded distributions.
 
+The owner-only runtime health endpoint additionally requires `s3:ListBucket` on
+the original and transformed bucket ARNs. Keep that grant constrained to the
+exact `media/health-check/` prefix and requests with `s3:max-keys` no greater
+than `1`; it must not grant object reads or unrestricted bucket listing.
+
 ## Contact deployment
 
 Contact infrastructure remains a manual maintenance operation after a reviewed
