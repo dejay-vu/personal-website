@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/dejay-vu/personal-website/compare/v0.1.2...v0.1.3) (2026-07-13)
+
+
+### Bug Fixes
+
+* **site:** stabilize navigation and media interactions ([#7](https://github.com/dejay-vu/personal-website/issues/7)) ([4f9b20d](https://github.com/dejay-vu/personal-website/commit/4f9b20dfc67b14007303898086434e7393bca086))
+
 ## [0.1.2](https://github.com/dejay-vu/personal-website/compare/v0.1.1...v0.1.2) (2026-07-13)
 
 
