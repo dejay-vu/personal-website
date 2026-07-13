@@ -1,13 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 
 import { buildPhotoURL } from '@/modules/photos/query';
 import type { PhotoDetail as PhotoDetailModel } from '@/modules/photos/types';
 
 import { toDate } from '@/lib/date';
 import { mediaImageLoader } from '@/lib/media';
+
+import { RouteLink } from '@/components/ui/RouteLink';
 
 import { PhotoCaption } from './PhotoCaption';
 import { getPhotoAltText } from './photoAlt';
@@ -82,13 +83,14 @@ export function PhotoDetail({ photo }: { photo: PhotoDetailModel }) {
         {ticketTags.length > 0 ? (
           <div className="flex flex-wrap justify-center gap-2 pt-1">
             {ticketTags.map(({ tag }) => (
-              <Link
+              <RouteLink
                 key={tag.id}
                 href={buildPhotoURL({ filters: { [tag.field]: [tag.slug] } })}
+                progressLabel="Loading photos"
                 className="neon-ticket px-2.5 py-1.5"
               >
                 #{tag.label}
-              </Link>
+              </RouteLink>
             ))}
           </div>
         ) : null}

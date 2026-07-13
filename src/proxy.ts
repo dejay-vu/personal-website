@@ -42,6 +42,7 @@ export const config = {
     {
       source: '/darkroom/:photoSlug',
       missing: [
+        { type: 'header', key: 'rsc' },
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
       ],
@@ -49,6 +50,7 @@ export const config = {
     {
       source: '/field-notes/:noteSlug',
       missing: [
+        { type: 'header', key: 'rsc' },
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
       ],

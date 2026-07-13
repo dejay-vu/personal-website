@@ -7,6 +7,80 @@ test.beforeEach(async ({ page }) => {
   await installMediaRoute(page);
 });
 
+test('Note navigation shows top progress before the article RSC completes', async ({
+  page,
+}) => {
+  const response = await page.request.get('/api/notes?limit=1');
+  expect(response.ok()).toBe(true);
+  const note = ((await response.json()) as NotesPage).notes[0];
+  if (!note) throw new Error('A published Note fixture is required.');
+  const targetPath = `/field-notes/${note.slug}`;
+  let releaseRequest: () => void = () => undefined;
+  const requestGate = new Promise<void>((resolve) => {
+    releaseRequest = resolve;
+  });
+  let resolveRequestStarted: () => void = () => undefined;
+  const requestStarted = new Promise<void>((resolve) => {
+    resolveRequestStarted = resolve;
+  });
+  const handler = async (route: import('@playwright/test').Route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const headers = request.headers();
+    const isTargetRsc =
+      url.pathname === targetPath &&
+      (url.searchParams.has('_rsc') || headers.rsc === '1');
+    if (!isTargetRsc) {
+      await route.fallback();
+      return;
+    }
+    const isPrefetch =
+      headers['next-router-prefetch'] !== undefined ||
+      headers.purpose === 'prefetch' ||
+      headers['sec-purpose']?.includes('prefetch');
+    if (isPrefetch) {
+      await route.abort();
+      return;
+    }
+
+    resolveRequestStarted();
+    await requestGate;
+    await route.fallback();
+  };
+
+  await page.route('**/*', handler);
+  try {
+    await page.goto('/field-notes');
+    await page.locator(`a[href="${targetPath}"]`).first().click({
+      noWaitAfter: true,
+    });
+    await requestStarted;
+
+    await expect(page).toHaveURL(/\/field-notes$/);
+    const progress = page.getByRole('progressbar', { name: 'Loading note' });
+    await expect(progress).toBeVisible({ timeout: 1_000 });
+    await expect(page.locator('.neon-storefront-grid')).toBeVisible();
+    expect(
+      await progress.evaluate((node) => {
+        const bounds = node.getBoundingClientRect();
+        return {
+          height: bounds.height,
+          position: getComputedStyle(node).position,
+          top: bounds.top,
+        };
+      }),
+    ).toEqual({ height: 3, position: 'fixed', top: 0 });
+
+    releaseRequest();
+    await expect(page).toHaveURL(new RegExp(`${targetPath}$`));
+    await expect(page.locator('[data-note-title]')).toHaveText(note.title);
+    await expect(page.locator('[data-route-progress]')).toHaveCount(0);
+  } finally {
+    releaseRequest();
+    await page.unroute('**/*', handler);
+  }
+});
+
 test('Note cards navigate to the canonical full article', async ({ page }) => {
   await page.goto('/field-notes');
   const card = page
@@ -24,6 +98,7 @@ test('Note cards navigate to the canonical full article', async ({ page }) => {
 
   await page.goBack();
   await expect(page).toHaveURL(/\/field-notes$/);
+  await expect(page.locator('[data-route-progress]')).toHaveCount(0);
 });
 
 test('a later featured Note uses the same canonical navigation path', async ({
@@ -110,6 +185,7 @@ test('modified Note clicks preserve native new-tab behavior', async ({
   await popup.waitForLoadState('domcontentloaded');
 
   await expect(page).toHaveURL(/\/field-notes$/);
+  await expect(page.locator('[data-route-progress]')).toHaveCount(0);
   await expect(popup).toHaveURL(new RegExp(`${href}$`));
   await expect(popup.getByRole('dialog')).toHaveCount(0);
   await popup.close();

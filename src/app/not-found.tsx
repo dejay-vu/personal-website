@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { RouteLink } from '@/components/ui/RouteLink';
 
 export default function NotFound() {
   return (
@@ -13,12 +13,13 @@ export default function NotFound() {
         <p className="text-foreground/80">
           The page you are looking for does not exist or has moved.
         </p>
-        <Link
+        <RouteLink
           href="/"
+          progressLabel="Loading home"
           className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-[var(--accent-hover)]"
         >
           Back to home
-        </Link>
+        </RouteLink>
       </div>
     </section>
   );
