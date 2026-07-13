@@ -9,7 +9,11 @@ test.beforeEach(async ({ page }) => {
 test('the retired standalone contact route returns 404', async ({ page }) => {
   const response = await page.goto('/contact');
 
-  expect(response?.status()).toBe(404);
+  if (!response) {
+    throw new Error('Expected /contact navigation to return a response.');
+  }
+
+  expect(response.status()).toBe(404);
   await expect(
     page.getByRole('heading', { level: 1, name: 'Page not found' }),
   ).toBeVisible();
