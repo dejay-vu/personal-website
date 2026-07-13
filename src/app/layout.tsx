@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 
+import { MOBILE_LITE_MEDIA_QUERY } from '@/config/media';
 import { APP_ROUTES, VENUES } from '@/config/venues';
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -127,6 +128,7 @@ try {
   if (path === '${APP_ROUTES.home}') {
     var el = document.documentElement;
     var st = el.style;
+    var mobileLite = window.matchMedia('${MOBILE_LITE_MEDIA_QUERY}').matches;
     // Restore the HUD readout so it never flashes a wrong/blank value.
     var hp = sessionStorage.getItem('neonHudPct');
     var hs = sessionStorage.getItem('neonHudStatus');
@@ -135,7 +137,7 @@ try {
     // Restore the active HUD sector highlight.
     var sector = sessionStorage.getItem('neonSector');
     if (sector) el.setAttribute('data-neon-sector', sector);
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (!mobileLite && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Restore the parallax offset (reduced motion has no parallax).
       var bgY = sessionStorage.getItem('neonBgY');
       if (bgY !== null) st.setProperty('--neon-bg-y', bgY + 'px');
@@ -146,6 +148,11 @@ try {
       if (sessionStorage.getItem('neonFx') === '1') {
         el.setAttribute('data-neon-fx', '');
       }
+    } else {
+      // The mobile/reduced homepage is DOM-rendered and has no parallax or
+      // projection canvas. Never restore a desktop gate into that first frame.
+      el.removeAttribute('data-neon-fx');
+      st.removeProperty('--neon-bg-y');
     }
   }
 } catch (_) {}

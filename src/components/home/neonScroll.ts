@@ -1,3 +1,4 @@
+import { MOBILE_LITE_MEDIA_QUERY } from '@/config/media';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -151,6 +152,9 @@ const trackFractions = (self: ScrollTrigger, vh: number) => {
 
 export function initNeonScroll(els: NeonScrollElements): () => void {
   gsap.registerPlugin(ScrollTrigger);
+  // Mobile browser chrome changes the visual viewport during ordinary touch
+  // scrolling. Never let those height-only resizes start a refresh cycle.
+  ScrollTrigger.config({ ignoreMobileResize: true });
 
   const holoElsOf = (scope: Element): HoloEl[] =>
     Array.from(scope.querySelectorAll<HTMLElement>('[data-holo-at]')).map(
@@ -393,47 +397,28 @@ export function initNeonScroll(els: NeonScrollElements): () => void {
       motion: '(prefers-reduced-motion: no-preference)',
       reduce: '(prefers-reduced-motion: reduce)',
       narrow: '(max-width: 720px)',
+      mobileLite: MOBILE_LITE_MEDIA_QUERY,
     },
     (ctx) => {
-      const { motion, narrow } = ctx.conditions as {
+      const { mobileLite, motion, narrow } = ctx.conditions as {
+        mobileLite: boolean;
         motion: boolean;
         narrow: boolean;
       };
       let alive = true;
 
-      if (!motion) {
-        // Reduced motion: no data-fx — the base CSS renders every title in
-        // its static projection material. Geometry only; no triggers, no
-        // ticker, no canvas (the loader never mounts one under reduce).
+      if (!motion || mobileLite) {
+        // Reduced motion and touch/mobile use the in-flow DOM projection:
+        // no ScrollTriggers, refreshes, ticker, per-frame geometry, parallax,
+        // or fixed title canvas.
+        document.documentElement.removeAttribute('data-neon-fx');
+        document.documentElement.style.removeProperty('--neon-bg-y');
+        els.bgImage.style.removeProperty('transform');
         setHudPct('PROJ 100%');
         setHudStatus('ALL SECTORS — STABLE');
         releaseProjectionReadiness();
-        const run = () => measureGeometry(narrow);
-        run();
-        window.addEventListener('resize', run);
-        document.fonts?.ready
-          .then(() => {
-            if (alive) run();
-          })
-          .catch(() => {});
-        const fontsDone = () => {
-          if (alive) run();
-        };
-        document.fonts?.addEventListener('loadingdone', fontsDone);
-        let roInit = true;
-        const ro = new ResizeObserver(() => {
-          if (roInit) {
-            roInit = false;
-            return;
-          }
-          run();
-        });
-        ro.observe(els.zone);
         return () => {
           alive = false;
-          window.removeEventListener('resize', run);
-          document.fonts?.removeEventListener('loadingdone', fontsDone);
-          ro.disconnect();
         };
       }
 

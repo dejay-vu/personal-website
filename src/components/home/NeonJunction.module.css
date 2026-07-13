@@ -4,9 +4,9 @@
    section: the titles slice-assemble sequentially from the
    street track's dwell progress, counts pop as their title
    completes. Hover / focus adds the live preview strip
-   (marquee / prints / hazard) and brightens; clicking fades to
-   black and rides into the route. One projection material —
-   the beam family — everywhere. Scoped module; inherits
+   (marquee / prints / hazard) and brightens; clicking follows
+   the route directly. One projection material — the beam family —
+   everywhere. Scoped module; inherits
    --zone-pad and the neon tokens from NeonLanding's .neon root.
    ============================================================ */
 
@@ -18,7 +18,7 @@
 /* Desktop + motion: the pin centres the junction, so the flow padding would
    push it off-centre inside the 100svh sticky box. Reduced motion keeps the
    generous flow padding (the Track collapses to static there). */
-@media (min-width: 721px) and (prefers-reduced-motion: no-preference) {
+@media (min-width: 721px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .junction {
     padding: 8px 0;
   }
@@ -34,20 +34,12 @@
   gap: 0 clamp(12px, 2.4vw, 26px);
   padding: 26px 0;
   cursor: pointer;
-  transition:
-    grid-template-rows 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
-    background 0.35s ease;
+  transition: grid-template-rows 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .term:hover,
-.term:focus-visible,
-.term.leaving {
+.term:focus-visible {
   grid-template-rows: auto 1fr;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklab, var(--beam) 8%, transparent),
-    transparent 72%
-  );
 }
 
 .term:focus-visible {
@@ -60,10 +52,9 @@
    keep hit-testing and preview layout aligned with that semantic state. */
 :global(html[data-neon-fx]) .term:not([data-projected]) {
   grid-template-rows: auto 0fr;
-  background: transparent;
   cursor: default;
   pointer-events: none;
-  transition: background 0.35s ease;
+  transition: none;
 }
 
 /* ---------- venue name: a hologram like every sign ---------- */
@@ -100,8 +91,7 @@
 /* No-fx fallback (reduced motion / textures not yet baked): hover/focus
    still wakes the DOM name with the stepped ignite glitch. */
 .term:hover .tname,
-.term:focus-visible .tname,
-.term.leaving .tname {
+.term:focus-visible .tname {
   animation: ignite 0.8s steps(1, end) forwards;
 }
 
@@ -157,6 +147,33 @@
   letter-spacing: 0.04em;
 }
 
+.tmeta {
+  display: inline-block;
+}
+
+.readyCue {
+  color: var(--beam);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  opacity: 0.78;
+  transition:
+    color 0.15s ease,
+    letter-spacing 0.2s ease;
+}
+
+.term:hover .readyCue,
+.term:focus-visible .readyCue {
+  color: #fff;
+  letter-spacing: 0.2em;
+  opacity: 1;
+}
+
+:global(html[data-neon-fx]) .term:not([data-projected]) .readyCue {
+  opacity: 0;
+  visibility: hidden;
+}
+
 .arw {
   color: var(--neon-dim);
   font-size: 18px;
@@ -167,8 +184,7 @@
 }
 
 .term:hover .arw,
-.term:focus-visible .arw,
-.term.leaving .arw {
+.term:focus-visible .arw {
   transform: translateX(6px);
   color: #fff;
   text-shadow: 0 0 10px var(--beam);
@@ -177,6 +193,8 @@
 :global(html[data-neon-fx]) .term:not([data-projected]) .arw {
   transform: none;
   color: var(--neon-dim);
+  opacity: 0;
+  visibility: hidden;
   text-shadow: none;
 }
 
@@ -218,20 +236,28 @@
   );
 }
 
+.photoMqClip {
+  container-type: inline-size;
+}
+
 .mq {
   display: flex;
-  gap: 52px;
   width: max-content;
   animation: mq 16s linear infinite;
   animation-play-state: paused;
 }
 
+.mqGroup {
+  display: flex;
+  flex: none;
+  gap: 52px;
+  padding-right: 52px;
+}
+
 .term:hover .mq,
 .term:focus-visible .mq,
-.term.leaving .mq,
 .term:hover .photoMq,
-.term:focus-visible .photoMq,
-.term.leaving .photoMq {
+.term:focus-visible .photoMq {
   animation-play-state: running;
 }
 
@@ -272,7 +298,15 @@
   display: flex;
   flex: none;
   gap: 10px;
-  padding-right: 10px;
+  justify-content: space-between;
+  min-width: calc(100cqi + clamp(76px, 10vw, 110px) + 10px);
+}
+
+/* A zero-width final flex item gives the inter-group boundary the same
+   distributed spacing as every internal thumbnail gap. */
+.photoMqGroup::after {
+  content: '';
+  flex: 0 0 0;
 }
 
 .thumb {
@@ -316,35 +350,11 @@
   white-space: nowrap;
 }
 
-/* ---------- departure blackout ---------- */
-/* Portalled under <body>, above every homepage stacking context. */
-.blackout {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483647;
-  background: #020108;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 300ms ease 120ms;
-}
-
-.blackoutOn {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* ---------- touch: no hover, keep the previews alive ---------- */
-@media (hover: none) {
+/* Touch lays previews out at their final height from the first frame. This
+   prevents a mid-scroll row expansion from changing document height. */
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
   .term {
     grid-template-rows: auto 1fr;
-  }
-
-  .mq {
-    animation-play-state: running;
-  }
-
-  .photoMq {
-    animation-play-state: running;
   }
 
   :global(html[data-neon-fx]) .term:not([data-projected]) {
@@ -357,14 +367,55 @@
   }
 }
 
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
+  .term {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 8px 0;
+    transition: none;
+  }
+  .tname {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .tcount {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  .tmeta {
+    display: none;
+  }
+  .tpre {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .junction {
+    scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 64px);
+  }
+  .mq,
+  .photoMq {
+    animation: none;
+  }
+  .mqGroup[aria-hidden='true'],
+  .photoMqGroup[aria-hidden='true'] {
+    display: none;
+  }
+}
+
 /* ---------- narrow screens ---------- */
 @media (max-width: 720px) {
   .tname {
     font-size: clamp(30px, 9.5vw, 44px);
   }
 
-  .tcount {
+  .tmeta {
     display: none;
+  }
+
+  .tcount {
+    display: flex;
+    font-size: 10px;
   }
 }
 
@@ -378,10 +429,8 @@
   .photoMq,
   .term:hover .mq,
   .term:focus-visible .mq,
-  .term.leaving .mq,
   .term:hover .photoMq,
-  .term:focus-visible .photoMq,
-  .term.leaving .photoMq {
+  .term:focus-visible .photoMq {
     animation: none;
   }
 
@@ -392,13 +441,8 @@
   /* no data-fx gate under reduce — the static projection material shows */
   .tname,
   .term:hover .tname,
-  .term:focus-visible .tname,
-  .term.leaving .tname {
+  .term:focus-visible .tname {
     animation: none;
     opacity: 1;
-  }
-
-  .blackout {
-    transition: none;
   }
 }

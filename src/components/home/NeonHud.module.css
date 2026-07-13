@@ -110,32 +110,10 @@
   border-radius: 2px;
 }
 
-/* Narrow screens: codes only — the current sector keeps its name. */
-@media (max-width: 560px) {
+/* Touch/mobile has no fixed HUD. This removes every visual, focus and hit-test
+   region from the content plane; the page itself remains the navigation. */
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
   .hud {
-    top: 10px;
-    right: 12px;
-    gap: 9px;
-  }
-  .links a span {
-    visibility: hidden;
-  }
-  .links a {
-    inline-size: 17ch;
-    justify-content: flex-end;
-  }
-  .links a:global(.on) span,
-  :global(html[data-neon-sector='home']) .links a[data-navlink='home'] span,
-  :global(html[data-neon-sector='about']) .links a[data-navlink='about'] span,
-  :global(html[data-neon-sector='timeline'])
-    .links
-    a[data-navlink='timeline']
-    span,
-  :global(html[data-neon-sector='street']) .links a[data-navlink='street'] span,
-  :global(html[data-neon-sector='contact'])
-    .links
-    a[data-navlink='contact']
-    span {
-    visibility: visible;
+    display: none;
   }
 }
