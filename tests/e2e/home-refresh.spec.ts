@@ -414,7 +414,7 @@ test('an unresolved homepage navigation retains the current document', async ({
     await route.continue();
   });
 
-  await page.goto('/contact');
+  await page.goto('/the-lab');
   const click = page
     .getByRole('navigation', { name: 'Return' })
     .getByRole('link')
@@ -423,7 +423,7 @@ test('an unresolved homepage navigation retains the current document', async ({
     await expect.poll(() => homepageRequestStarted).toBe(true);
     await page.waitForTimeout(500);
     await expect(page.getByRole('heading', { level: 1 })).toContainText(
-      'Got something to say',
+      'The Lab',
     );
     await expect(page.getByRole('progressbar')).toHaveCount(0);
   } finally {

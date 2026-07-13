@@ -19,10 +19,6 @@ const staticPages = [
     path: VENUES.projects.path,
     priority: 0.5,
   },
-  {
-    path: APP_ROUTES.contact,
-    priority: 0.5,
-  },
 ] as const;
 
 function newestDate(dates: Array<Date | string | null | undefined>) {

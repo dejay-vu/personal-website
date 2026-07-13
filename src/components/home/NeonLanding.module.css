@@ -490,8 +490,7 @@
   font-family: inherit;
 }
 /* Holo-restyle the HeroUI form — HOME ONLY. These module rules are unlayered,
-   so they win over HeroUI's @layer-utilities without !important; the shared
-   ContactForm and the /contact page keep their default look. HeroUI v3
+   so they win over HeroUI's @layer-utilities without !important. HeroUI v3
    renders stable data-slot attributes. */
 .formArea [data-slot='input-group'] {
   background: rgba(10, 6, 24, 0.5);

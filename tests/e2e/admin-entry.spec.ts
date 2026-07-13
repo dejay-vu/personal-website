@@ -32,7 +32,6 @@ test('public shells contain no Admin entry or owner-login action', async ({
     '/darkroom',
     photoPath!,
     '/the-lab',
-    '/contact',
   ];
 
   for (const path of paths) {

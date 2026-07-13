@@ -29,7 +29,6 @@ test('builds item paths from the registry', () => {
   assert.equal(notePath('pytorch-intro'), '/field-notes/pytorch-intro');
   assert.equal(projectPath('cuda-lab'), '/the-lab/cuda-lab');
   assert.equal(APP_ROUTES.home, '/');
-  assert.equal(APP_ROUTES.contact, '/contact');
 });
 
 test('derives router segments from venue paths', () => {
