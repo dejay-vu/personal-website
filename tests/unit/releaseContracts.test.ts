@@ -10,7 +10,7 @@ function json<T>(path: string) {
   return JSON.parse(read(path)) as T;
 }
 
-test('release-please starts from v0.1.0 with explicit pre-major policy', () => {
+test('release-please keeps versions aligned with explicit pre-major policy', () => {
   const packageManifest = json<{
     devEngines: {
       packageManager: { name: string; onFail: string; version: string };
@@ -39,7 +39,7 @@ test('release-please starts from v0.1.0 with explicit pre-major policy', () => {
   }>('release-please-config.json');
   const root = config.packages['.'];
 
-  assert.equal(packageManifest.version, '0.1.0');
+  assert.match(packageManifest.version, /^0\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/);
   assert.equal(manifest['.'], packageManifest.version);
   assert.equal(root['release-type'], 'node');
   assert.equal(root['package-name'], 'dejayvu');
