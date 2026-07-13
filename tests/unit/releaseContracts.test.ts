@@ -201,5 +201,8 @@ test('Vercel deploys main while conventional short-lived branches stay CI-only',
     'style/*': false,
     'test/*': false,
   });
-  assert.equal(vercel.git?.deploymentEnabled?.main, undefined);
+  assert.equal(
+    Object.hasOwn(vercel.git?.deploymentEnabled ?? {}, 'main'),
+    false,
+  );
 });
