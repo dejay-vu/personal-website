@@ -1,18 +1,21 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { VENUES, projectPath } from '@/config/venues';
+import { APP_ROUTES, VENUES, projectPath } from '@/config/venues';
 import {
   getPublishedProjectBySlug,
   getPublishedProjectSitemapEntries,
 } from '@/modules/projects';
 
 import {
+  type BreadcrumbItem,
   absoluteUrl,
+  createBreadcrumbListJsonLd,
   createPageMetadata,
   createSoftwareSourceCodeJsonLd,
 } from '@/lib/seo';
 
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { ProjectArticle } from '@/components/projects/project/ProjectArticle';
 
@@ -35,13 +38,24 @@ export async function generateMetadata({
   const project = await getPublishedProjectBySlug(projectSlug);
   if (!project) notFound();
 
-  return createPageMetadata({
-    title: `${project.name} | ${VENUES.projects.label}`,
-    description: project.pitch,
+  const metadata = createPageMetadata({
+    title: project.seoTitle,
+    description: project.seoDescription,
     path: projectPath(project.slug),
-    // No per-project OG image: the screenshot is an SVG, which social
-    // scrapers drop — the site's default 1200x630 raster applies.
+    image: {
+      url: absoluteUrl(project.ogImage.src),
+      width: project.ogImage.width,
+      height: project.ogImage.height,
+      alt: project.ogImage.alt,
+    },
   });
+
+  return {
+    ...metadata,
+    title: { absolute: project.seoTitle },
+    openGraph: { ...metadata.openGraph, title: project.seoTitle },
+    twitter: { ...metadata.twitter, title: project.seoTitle },
+  };
 }
 
 export default async function Page({
@@ -56,10 +70,17 @@ export default async function Page({
   if (!project) notFound();
 
   const url = absoluteUrl(projectPath(project.slug));
+  const breadcrumbs = [
+    { href: APP_ROUTES.home, label: 'Home' },
+    { href: VENUES.projects.path, label: VENUES.projects.label },
+    { href: projectPath(project.slug), label: project.name },
+  ] satisfies readonly BreadcrumbItem[];
 
   return (
     <>
       <JsonLd data={createSoftwareSourceCodeJsonLd({ project, url })} />
+      <JsonLd data={createBreadcrumbListJsonLd(breadcrumbs)} />
+      <Breadcrumbs items={breadcrumbs} />
       <ProjectArticle project={project} />
     </>
   );

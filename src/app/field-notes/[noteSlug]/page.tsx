@@ -1,17 +1,20 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { notePath } from '@/config/venues';
+import { APP_ROUTES, VENUES, notePath } from '@/config/venues';
 import { getPublishedNoteBySlug, getPublishedNoteSlugs } from '@/modules/notes';
 
 import { toDate } from '@/lib/date';
 import { getMediaImageURL } from '@/lib/media';
 import {
+  type BreadcrumbItem,
   absoluteUrl,
   createArticleMetadata,
+  createBreadcrumbListJsonLd,
   createNotePostingJsonLd,
 } from '@/lib/seo';
 
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { NoteArticle } from '@/components/notes/note/NoteArticle';
 
@@ -83,10 +86,17 @@ export default async function Page({
     width: 1200,
   });
   const url = absoluteUrl(notePath(note.slug));
+  const breadcrumbs = [
+    { href: APP_ROUTES.home, label: 'Home' },
+    { href: VENUES.notes.path, label: VENUES.notes.label },
+    { href: notePath(note.slug), label: note.title },
+  ] satisfies readonly BreadcrumbItem[];
 
   return (
     <>
       <JsonLd data={createNotePostingJsonLd({ image, note, url })} />
+      <JsonLd data={createBreadcrumbListJsonLd(breadcrumbs)} />
+      <Breadcrumbs items={breadcrumbs} />
       <NoteArticle note={note} markdown={note.content} />
     </>
   );

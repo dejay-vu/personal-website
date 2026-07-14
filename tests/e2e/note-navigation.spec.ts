@@ -208,12 +208,59 @@ test('direct Note loads and invalid slugs keep canonical behavior', async ({
     'href',
     new RegExp(`${href}$`),
   );
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('link', { name: 'Home' })).toHaveAttribute(
+    'href',
+    '/',
+  );
+  await expect(
+    breadcrumb.getByRole('link', { name: 'Field Notes' }),
+  ).toHaveAttribute('href', '/field-notes');
+  const noteTitle = await page.locator('[data-note-title]').textContent();
+  expect(noteTitle).toBeTruthy();
+  await expect(breadcrumb.locator('[aria-current="page"]')).toHaveText(
+    noteTitle!,
+  );
+  await expect(page.locator('[data-byline]')).toHaveText(
+    'By Junhao Zhang (Jay)',
+  );
+  await expect(page.locator('[data-byline] a')).toHaveAttribute(
+    'href',
+    '/#about',
+  );
   const jsonLd = await page
     .locator('script[type="application/ld+json"]')
     .allTextContents();
-  expect(jsonLd.map((value) => JSON.parse(value)['@type'])).toContain(
-    'BlogPosting',
+  const documents = jsonLd.map((value) => JSON.parse(value));
+  const posting = documents.find(({ '@type': type }) => type === 'BlogPosting');
+  const breadcrumbData = documents.find(
+    ({ '@type': type }) => type === 'BreadcrumbList',
   );
+  expect(posting?.author).toMatchObject({
+    '@type': 'Person',
+    '@id': 'https://dejayvu.com/#person',
+    name: 'Junhao Zhang',
+    url: 'https://dejayvu.com/#person',
+  });
+  expect(breadcrumbData?.itemListElement).toHaveLength(3);
+
+  const footerLinks = page
+    .getByRole('contentinfo')
+    .getByRole('navigation', { name: 'Site' })
+    .locator('a');
+  await expect(footerLinks).toHaveCount(5);
+  expect(
+    await footerLinks.evaluateAll((links) =>
+      links.map((link) => link.getAttribute('href')),
+    ),
+  ).toEqual([
+    '/',
+    '/field-notes',
+    '/darkroom',
+    '/the-lab',
+    '/the-lab/slurmdeck',
+  ]);
+  await expect(page.locator('footer a[href="/admin"]')).toHaveCount(0);
 
   const response = await page.goto('/field-notes/e2e-definitely-missing');
   expect(response?.status()).toBe(404);

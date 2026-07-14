@@ -3,6 +3,7 @@ import clsx from 'clsx';
 
 import { toDate } from '@/lib/date';
 
+import { AuthorByline } from '@/components/AuthorByline';
 import { NoteCoverImage } from '@/components/notes';
 import { NoteContent } from '@/components/notes/note/NoteContent';
 
@@ -39,6 +40,7 @@ export function NoteArticle({
       </h1>
 
       <div className="not-prose flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs uppercase tracking-[0.14em] text-foreground/55">
+        <AuthorByline className="normal-case tracking-[0.08em]" />
         <time dateTime={dateTime.toISOString()}>{dateTime.toDateString()}</time>
         <span>{note.readingTime} min read</span>
         <span>{note.wordCount} words</span>

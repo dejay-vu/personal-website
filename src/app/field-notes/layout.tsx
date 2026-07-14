@@ -5,7 +5,7 @@ import { createSectionMetadata } from '@/lib/seo';
 export const metadata = createSectionMetadata({
   title: VENUES.notes.label,
   description:
-    'Technical notes and essays by Junhao Zhang (张俊豪), also known as Jay Zhang and DeJay Vu, about machine learning, GPU programming, CUDA, and software systems.',
+    'Technical notes and essays by Junhao Zhang, known as Jay, about machine learning, GPU programming, CUDA, and software systems.',
   path: VENUES.notes.path,
 });
 

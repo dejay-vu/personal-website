@@ -1,16 +1,20 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { VENUES, photoPath } from '@/config/venues';
+import { APP_ROUTES, VENUES, photoPath } from '@/config/venues';
 import { getPhotoBySlug, getPhotoSitemapEntries } from '@/modules/photos';
+import { getPhotoSeoPresentation } from '@/modules/photos/presentation';
 
 import { MEDIA_VARIANT_WIDTHS, getMediaImageURL } from '@/lib/media';
 import {
+  type BreadcrumbItem,
   absoluteUrl,
+  createBreadcrumbListJsonLd,
   createImageObjectJsonLd,
   createPageMetadata,
 } from '@/lib/seo';
 
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { PhotoDetail } from '@/components/photos/PhotoDetail';
 import { getPhotoDisplayDimensions } from '@/components/photos/photoDimensions';
@@ -44,14 +48,15 @@ export async function generateMetadata({
     format: 'jpeg',
   });
   const dimensions = getPhotoDisplayDimensions(photo);
+  const presentation = getPhotoSeoPresentation(photo);
 
   return createPageMetadata({
     // Bare title: the root layout's title.template appends the site name.
-    title: `${photo.title} | ${VENUES.photos.label}`,
-    description: `${photo.title}, photographed by Junhao Zhang (张俊豪), also known as Jay Zhang and DeJay Vu.`,
+    title: `${presentation.name} | ${VENUES.photos.label}`,
+    description: presentation.description,
     path: photoPath(photo.slug),
     image: {
-      alt: photo.title,
+      alt: presentation.name,
       url: image,
       width: OG_IMAGE_WIDTH,
       height: Math.round(
@@ -67,19 +72,35 @@ export default async function Page({ params }: PageProps) {
 
   if (!photo) notFound();
 
-  const image = getMediaImageURL({
+  const contentUrl = getMediaImageURL({
+    key: photo.mediaAsset.originalKey,
+    width: MEDIA_VARIANT_WIDTHS.seo,
+  });
+  const thumbnailUrl = getMediaImageURL({
     key: photo.mediaAsset.originalKey,
     width: MEDIA_VARIANT_WIDTHS.card,
   });
   const url = absoluteUrl(photoPath(photo.slug));
+  const presentation = getPhotoSeoPresentation(photo);
+  const breadcrumbs = [
+    { href: APP_ROUTES.home, label: 'Home' },
+    { href: VENUES.photos.path, label: VENUES.photos.label },
+    {
+      href: photoPath(photo.slug),
+      label: presentation.name,
+    },
+  ] satisfies readonly BreadcrumbItem[];
 
   return (
     <>
+      <JsonLd data={createBreadcrumbListJsonLd(breadcrumbs)} />
+      <Breadcrumbs items={breadcrumbs} />
       <PhotoDetail photo={photo} />
       <JsonLd
         data={createImageObjectJsonLd({
-          image,
+          contentUrl,
           photo,
+          thumbnailUrl,
           url,
         })}
       />

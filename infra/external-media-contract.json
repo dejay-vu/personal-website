@@ -1,6 +1,7 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "storageLayoutVersion": 1,
+  "accountId": "590184028386",
   "region": "eu-west-2",
   "managedByThisRepository": false,
   "originals": {
@@ -27,5 +28,40 @@
       "maxImageSize": "50000000",
       "transformedImageCacheTTL": "max-age=31622400"
     }
+  },
+  "viewerRequest": {
+    "ownerStack": "ImgTransformationStack",
+    "cloudFormationLogicalId": "urlRewriteD6DE1501",
+    "distributionId": "E3NIJGE6689HH7",
+    "functionName": "urlRewriteFunctionc8686f3674591d3fdb088e2d68d00eeeb616bdfdab",
+    "runtime": "cloudfront-js-1.0",
+    "eventType": "viewer-request",
+    "sourceFile": "infra/cloudfront/url-rewrite-function.js",
+    "baselineSourceSha256": "a3d26e2b38b616c6b503a1d5f5db0cef905fe36783710ed33199480dfbc4ca2e",
+    "targetSourceSha256": "f9ee2707e151e663c7cd97fa467e4956255eb118b32c9670ab23b0384000f9cc",
+    "robots": {
+      "path": "/robots.txt",
+      "methods": ["GET", "HEAD"],
+      "statusCode": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "public, max-age=86400",
+      "getBody": "User-agent: *\nAllow: /\n"
+    }
+  },
+  "driftPolicy": {
+    "known": [
+      {
+        "logicalResourceId": "imageoptimization4C49F079",
+        "propertyPath": "/Environment/Variables/maxImageSize",
+        "expectedValue": "4700000",
+        "actualValue": "50000000"
+      }
+    ],
+    "afterViewerRequestPatch": [
+      {
+        "logicalResourceId": "urlRewriteD6DE1501",
+        "propertyPath": "/FunctionCode"
+      }
+    ]
   }
 }

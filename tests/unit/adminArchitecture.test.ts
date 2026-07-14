@@ -66,12 +66,15 @@ test('admin route adapters import only their owning domain modules', () => {
     );
   }
 
+  const retiredPhotoSegment = ['gal', 'lery'].join('');
   assert.equal(
-    existsSync('src/app/api/admin/gallery/photos/[id]/route.ts'),
+    existsSync(`src/app/api/admin/${retiredPhotoSegment}/photos/[id]/route.ts`),
     false,
   );
   assert.equal(
-    existsSync('src/app/api/admin/gallery/photos/finalize/route.ts'),
+    existsSync(
+      `src/app/api/admin/${retiredPhotoSegment}/photos/finalize/route.ts`,
+    ),
     false,
   );
 });

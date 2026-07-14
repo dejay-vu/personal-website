@@ -467,7 +467,7 @@ export function NeonLanding({
       <div className={styles.vig} aria-hidden="true" />
       <div ref={fxHostRef} className={styles.fx} aria-hidden="true" />
 
-      <main className={styles.main}>
+      <div className={styles.main}>
         {/* HERO — pinned for one viewport of scroll: DEJAYVU holds centred
             while the canvas peels it apart as horizontal hologram slices
             that withdraw upward (chromatic fringes, registration jitter);
@@ -476,9 +476,14 @@ export function NeonLanding({
         <div ref={heroTrackRef} className={styles.heroTrack} id="home">
           <header className={styles.hero}>
             <div ref={heroCoreRef} className={styles.heroCore}>
-              <div className={styles.brand} aria-label="DeJayVu">
-                <NeonWordmark />
-              </div>
+              <h1 className={styles.heroHeading}>
+                <span className="sr-only">
+                  Junhao Zhang (Jay) — Machine Learning &amp; HPC Engineer
+                </span>
+                <span className={styles.brand} aria-hidden="true">
+                  <NeonWordmark />
+                </span>
+              </h1>
             </div>
           </header>
         </div>
@@ -498,12 +503,14 @@ export function NeonLanding({
                 className={`${styles.bio} ${styles.holoEl}`}
                 data-holo-at="0.45"
               >
-                I’m Junhao Zhang — a Machine Learning Engineer who geeks out
-                over <b>GPU programming</b> and advanced computing systems,
-                making machines think faster and smarter. I’ve tuned Llama2-70B
-                and shipped performance for{' '}
-                <b>Huggingface, Alibaba &amp; Microsoft</b>. Off the clock I’m
-                up a mountain, under a reef, or behind a camera lens.
+                I’m Junhao Zhang—Jay for short—a Machine Learning Software
+                Engineer focused on <b>GPU programming</b>, high-performance
+                computing, and advanced systems. I build faster, more efficient
+                machine learning systems—from tuning Llama 2 70B to shipping
+                performance work for{' '}
+                <b>Hugging Face, Alibaba &amp; Microsoft</b>. Away from the
+                terminal, I’m usually in the mountains, beneath the waves, or
+                behind a camera.
               </p>
             </section>
           </Track>
@@ -593,7 +600,7 @@ export function NeonLanding({
             </footer>
           </section>
         </div>
-      </main>
+      </div>
 
       <NeonHud />
     </div>

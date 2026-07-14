@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 export type DomainLanguageViolation = {
   file: string;
@@ -12,11 +12,10 @@ const IGNORED_PREFIXES = [
   'docs/adr/',
   'docs/superpowers/',
   'node_modules/',
-  'scripts/domain-reset/',
   'src/generated/',
 ];
 const IGNORED_FILES = new Set(['scripts/check-domain-language.ts']);
-const ACTIVE_EXTENSION = /\.(?:prisma|ts|tsx)$/;
+const ACTIVE_EXTENSION = /\.(?:css|prisma|ts|tsx)$/;
 const LEGACY_PATH_SEGMENTS = new Set(['gallery', 'thoughts']);
 const LEGACY_STORAGE_PREFIXES = [
   ['content', 'thoughts'].join('/') + '/',
@@ -28,11 +27,9 @@ const LEGACY_STORAGE_PATTERN = new RegExp(
   `(?:${LEGACY_STORAGE_PREFIXES.join('|')})`,
 );
 const LEGACY_LINE_PATTERNS = [
-  /\b(?:Gallery|Thought)[A-Za-z0-9_]*\b/,
+  /\b(?:gallery|thoughts)\b/i,
   /\b(?:Post|posts|postSlug)\b/,
-  /(['"`])(?:gallery|thoughts)\1/,
   LEGACY_STORAGE_PATTERN,
-  /\/api\/(?:admin\/)?(?:gallery|thoughts)(?:\/|\b)/,
 ];
 
 function isActiveFile(file: string) {
@@ -88,7 +85,8 @@ function readTrackedActiveFiles() {
   })
     .split('\0')
     .filter(Boolean)
-    .filter(isActiveFile);
+    .filter(isActiveFile)
+    .filter(existsSync);
 
   return Object.fromEntries(
     paths.map((file) => [file, readFileSync(file, 'utf8')]),

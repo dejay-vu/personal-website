@@ -11,7 +11,11 @@ import { getPublishedNoteSitemapEntries } from '@/modules/notes';
 import { getPhotoSitemapEntries } from '@/modules/photos';
 import { getPublishedProjectSitemapEntries } from '@/modules/projects';
 
+import { MEDIA_VARIANT_WIDTHS, getMediaImageURL } from '@/lib/media';
 import { absoluteUrl } from '@/lib/seo';
+import { escapeSitemapImageUrl } from '@/lib/sitemap';
+
+export const revalidate = 3600;
 
 const staticPages = [
   {
@@ -73,12 +77,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: note.updatedAt ?? note.publishedAt,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+      images: [
+        escapeSitemapImageUrl(
+          getMediaImageURL({
+            format: 'webp',
+            key: note.coverMedia.originalKey,
+            quality: 75,
+            width: MEDIA_VARIANT_WIDTHS.noteCover,
+          }),
+        ),
+      ],
     })),
     ...projects.map((project) => ({
       url: absoluteUrl(projectPath(project.slug)),
       lastModified: project.updatedAt ?? project.publishedAt,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
+      images: [absoluteUrl(project.screenshot.src)],
     })),
     {
       url: absoluteUrl(VENUES.photos.path),
@@ -91,6 +106,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: photo.updatedAt,
       changeFrequency: 'monthly' as const,
       priority: 0.5,
+      images: [
+        escapeSitemapImageUrl(
+          getMediaImageURL({
+            format: 'webp',
+            key: photo.mediaAsset.originalKey,
+            quality: 75,
+            width: MEDIA_VARIANT_WIDTHS.seo,
+          }),
+        ),
+      ],
     })),
   ];
 }

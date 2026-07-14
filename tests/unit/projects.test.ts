@@ -39,7 +39,9 @@ test('exposes published projects through the read seam', async () => {
   assert.ok(
     sitemapEntries.every(
       (entry) =>
-        entry.publishedAt instanceof Date && entry.updatedAt instanceof Date,
+        entry.publishedAt instanceof Date &&
+        entry.updatedAt instanceof Date &&
+        entry.screenshot.src.startsWith('/assets/'),
     ),
   );
 });
@@ -51,7 +53,7 @@ test('project data keeps unique slugs and checked-in screenshots', async () => {
   assert.equal(new Set(slugs).size, slugs.length);
 
   for (const project of projects) {
-    assert.match(project.screenshot.src, /^\/projects\//);
+    assert.match(project.screenshot.src, /^\/assets\//);
     assert.ok(
       existsSync(`public${project.screenshot.src}`),
       `screenshot asset missing: public${project.screenshot.src}`,
@@ -60,7 +62,7 @@ test('project data keeps unique slugs and checked-in screenshots', async () => {
 });
 
 test('the TUI capture stays sanitized of external font fetches', () => {
-  const svg = readFileSync('public/projects/slurmdeck-tui.svg', 'utf8');
+  const svg = readFileSync('public/assets/slurmdeck-tui.svg', 'utf8');
 
   // SVG-as-<img> cannot fetch external resources and CSP would block them;
   // the capture must rely on local()/monospace fallbacks only.

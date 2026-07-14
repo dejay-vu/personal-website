@@ -14,7 +14,7 @@ test('wide Darkroom rows align without stretching a sparse final row', async ({
 }, testInfo) => {
   test.skip(
     testInfo.project.name !== 'desktop-chromium',
-    'Wide-screen gallery geometry is covered by the desktop browser.',
+    'Wide-screen photo-grid geometry is covered by the desktop browser.',
   );
   await page.setViewportSize({ width: 1920, height: 900 });
   await page.goto('/darkroom');
@@ -643,4 +643,67 @@ test('canonical Photo detail keeps its full metadata view', async ({
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('article')).toBeVisible();
   await expect(page.locator('article h1')).toHaveCount(1);
+  await expect(page.locator('article figure')).toHaveCount(1);
+  await expect(page.locator('article figure > figcaption')).toHaveCount(1);
+
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('link', { name: 'Home' })).toHaveAttribute(
+    'href',
+    '/',
+  );
+  await expect(
+    breadcrumb.getByRole('link', { name: 'Darkroom' }),
+  ).toHaveAttribute('href', '/darkroom');
+  await expect(breadcrumb.locator('[aria-current="page"]')).toHaveCount(1);
+
+  const documents = (
+    await page.locator('script[type="application/ld+json"]').allTextContents()
+  ).map((value) => JSON.parse(value));
+  const image = documents.find(({ '@type': type }) => type === 'ImageObject');
+  const breadcrumbData = documents.find(
+    ({ '@type': type }) => type === 'BreadcrumbList',
+  );
+  expect(image?.creator).toMatchObject({
+    '@type': 'Person',
+    '@id': 'https://dejayvu.com/#person',
+    name: 'Junhao Zhang',
+    url: 'https://dejayvu.com/#person',
+  });
+  const detailImage = page.locator('article figure img');
+  const detailImageUrl = await detailImage.evaluate(
+    (node) => (node as HTMLImageElement).src,
+  );
+  const contentUrl = new URL(image?.contentUrl);
+  const thumbnailUrl = new URL(image?.thumbnailUrl);
+  const ogImageUrl = new URL(
+    (await page.locator('meta[property="og:image"]').getAttribute('content'))!,
+  );
+  const description = await page
+    .locator('meta[name="description"]')
+    .getAttribute('content');
+
+  expect(image?.contentUrl).toBe(detailImageUrl);
+  expect(contentUrl.searchParams.get('format')).toBe('webp');
+  expect(contentUrl.searchParams.get('quality')).toBe('75');
+  expect(contentUrl.searchParams.get('width')).toBe('2048');
+  expect(thumbnailUrl.searchParams.get('format')).toBe('webp');
+  expect(thumbnailUrl.searchParams.get('quality')).toBe('75');
+  expect(thumbnailUrl.searchParams.get('width')).toBe('480');
+  expect(ogImageUrl.searchParams.get('format')).toBe('jpeg');
+  expect(ogImageUrl.searchParams.get('width')).toBe('1200');
+  expect(await detailImage.getAttribute('alt')).toBe(image?.name);
+  expect(description).toBe(image?.description);
+  expect(image?.mainEntityOfPage).toBe(
+    `https://dejayvu.com${new URL(page.url()).pathname}`,
+  );
+  expect(image?.creditText).toBe('Junhao Zhang');
+  expect(image?.copyrightNotice).toBe('© Junhao Zhang. All rights reserved.');
+  expect(image?.dateCreated).toBeTruthy();
+  expect(image).not.toHaveProperty('license');
+  expect(image).not.toHaveProperty('acquireLicensePage');
+  await expect(page.locator('meta[name="googlebot"]')).toHaveAttribute(
+    'content',
+    /max-image-preview:large/,
+  );
+  expect(breadcrumbData?.itemListElement).toHaveLength(3);
 });

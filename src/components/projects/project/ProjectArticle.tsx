@@ -2,6 +2,8 @@ import Image from 'next/image';
 
 import { type ProjectDetail, projectMetaLine } from '@/modules/projects/types';
 
+import { AuthorByline } from '@/components/AuthorByline';
+
 // The canonical Project detail body. This is a spec sheet, not an article:
 // mono section headers and typed fields rather than Markdown prose, so it
 // deliberately skips the `.neon-prose` stack. Stays a Server Component so
@@ -28,6 +30,8 @@ export function ProjectArticle({ project }: { project: ProjectDetail }) {
         </p>
 
         <p className="project-meta">{projectMetaLine(project)}</p>
+
+        <AuthorByline className="font-mono text-xs tracking-[0.08em] text-foreground/60" />
 
         <div className="flex flex-wrap gap-3">
           <a

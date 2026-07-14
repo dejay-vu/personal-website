@@ -5,7 +5,7 @@ import { createSectionMetadata } from '@/lib/seo';
 export const metadata = createSectionMetadata({
   title: VENUES.projects.label,
   description:
-    'Projects by Junhao Zhang (张俊豪), also known as Jay Zhang and DeJay Vu, focused on machine learning systems, GPU programming, and web engineering.',
+    'Projects by Junhao Zhang, known as Jay, focused on machine learning systems, GPU programming, and web engineering.',
   path: VENUES.projects.path,
 });
 

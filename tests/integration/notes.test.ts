@@ -16,7 +16,10 @@ import {
   updateAdminNoteFromEditor,
   updateAdminNoteStatus,
 } from '../../src/modules/notes/admin';
-import { getPublishedNoteBySlug } from '../../src/modules/notes/read';
+import {
+  getPublishedNoteBySlug,
+  getPublishedNoteSitemapEntries,
+} from '../../src/modules/notes/read';
 import {
   configureStorageDeletionTestEnvironment,
   resetDatabase,
@@ -67,6 +70,48 @@ const preparedCover = ({
   sha256: 'a'.repeat(64),
   sizeBytes: 100,
   width: 1200,
+});
+
+test('note sitemap reads the cover key and excludes hidden notes', async () => {
+  const visible = await seedNote({
+    content: '# Visible',
+    slug: 'sitemap-visible-note',
+  });
+  const archived = await seedNote({
+    content: '# Archived',
+    slug: 'sitemap-archived-note',
+  });
+  const unpublished = await seedNote({
+    content: '# Unpublished',
+    slug: 'sitemap-unpublished-note',
+  });
+  await prisma.note.update({
+    data: { archivedAt: new Date() },
+    where: { id: archived.id },
+  });
+  await prisma.note.update({
+    data: { published: false },
+    where: { id: unpublished.id },
+  });
+
+  const persisted = await prisma.note.findUniqueOrThrow({
+    include: { coverMedia: true },
+    where: { id: visible.id },
+  });
+  const entries = await getPublishedNoteSitemapEntries();
+
+  assert.deepEqual(
+    entries.map(({ coverMedia, slug }) => ({
+      originalKey: coverMedia.originalKey,
+      slug,
+    })),
+    [
+      {
+        originalKey: persisted.coverMedia.originalKey,
+        slug: visible.slug,
+      },
+    ],
+  );
 });
 
 test('commits note, audit, and finalized intent atomically', async () => {

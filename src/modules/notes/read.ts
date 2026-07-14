@@ -22,7 +22,7 @@ export {
   NOTES_MAX_PAGE_SIZE,
   normalizeNotesPageInput,
 } from './pageInput';
-const NOTES_CACHE_VERSION = 'v4';
+const NOTES_CACHE_VERSION = 'v5';
 
 const noteListSelect = {
   abstract: true,
@@ -177,6 +177,11 @@ async function findPublishedNoteSitemapEntries() {
       published: true,
     },
     select: {
+      coverMedia: {
+        select: {
+          originalKey: true,
+        },
+      },
       slug: true,
       publishedAt: true,
       updatedAt: true,
@@ -242,10 +247,15 @@ export const getPublishedNoteSlugs = unstable_cache(
   },
 );
 
-export const getPublishedNoteSitemapEntries = unstable_cache(
+const getCachedPublishedNoteSitemapEntries = unstable_cache(
   findPublishedNoteSitemapEntries,
   ['notes', NOTES_CACHE_VERSION, 'published-note-sitemap-entries'],
   {
     tags: [NOTES_CACHE_TAG],
   },
 );
+
+export const getPublishedNoteSitemapEntries = () =>
+  process.env.NODE_ENV === 'test'
+    ? findPublishedNoteSitemapEntries()
+    : getCachedPublishedNoteSitemapEntries();

@@ -25,7 +25,7 @@ export {
   PHOTOS_PAGE_SIZE,
   normalizePhotosPageInput,
 } from './pageInput';
-const PHOTOS_CACHE_VERSION = 'v3';
+const PHOTOS_CACHE_VERSION = 'v4';
 
 const photoOrderBy = [
   { createdAt: 'desc' },
@@ -34,6 +34,9 @@ const photoOrderBy = [
 
 export type PhotoSitemapEntries = {
   photos: {
+    mediaAsset: {
+      originalKey: string;
+    };
     slug: string;
     updatedAt: Date;
   }[];
@@ -267,6 +270,11 @@ async function findPhotoSitemapEntries(): Promise<PhotoSitemapEntries> {
       archivedAt: null,
     },
     select: {
+      mediaAsset: {
+        select: {
+          originalKey: true,
+        },
+      },
       slug: true,
       updatedAt: true,
     },
@@ -319,10 +327,15 @@ export const getPhotoBySlug = unstable_cache(
   },
 );
 
-export const getPhotoSitemapEntries = unstable_cache(
+const getCachedPhotoSitemapEntries = unstable_cache(
   findPhotoSitemapEntries,
   ['photos', PHOTOS_CACHE_VERSION, 'sitemap-entries'],
   {
     tags: ['photos'],
   },
 );
+
+export const getPhotoSitemapEntries = () =>
+  process.env.NODE_ENV === 'test'
+    ? findPhotoSitemapEntries()
+    : getCachedPhotoSitemapEntries();

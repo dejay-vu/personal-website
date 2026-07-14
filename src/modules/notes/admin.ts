@@ -197,6 +197,7 @@ function getImageDimensions(buffer: Buffer) {
 function revalidateNotes() {
   runCacheRevalidation(() => {
     revalidateTag(NOTES_CACHE_TAG, 'max');
+    revalidatePath('/sitemap.xml');
   });
 }
 

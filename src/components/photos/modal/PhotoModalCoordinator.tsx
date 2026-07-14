@@ -237,7 +237,7 @@ export function PhotoModalCoordinator({
       }
 
       // Dispatching a newer replace cancels an unresolved App Router
-      // navigation without accidentally going back past the gallery.
+      // navigation without accidentally going back past the photo grid.
       router.replace(current.originHref, { scroll: false });
     },
     [router, updateOpen, updateSession],
