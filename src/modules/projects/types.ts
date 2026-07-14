@@ -1,5 +1,5 @@
 export type ProjectScreenshot = {
-  /** Checked-in public asset path, e.g. `/projects/slurmdeck-tui.svg`. */
+  /** Checked-in public asset path, e.g. `/assets/slurmdeck-tui.svg`. */
   src: string;
   width: number;
   height: number;
@@ -35,12 +35,23 @@ export type ProjectWorkflowStep = {
   description: string;
 };
 
+export type ProjectSeoImage = {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+};
+
 export type ProjectFeature = {
   title: string;
   description: string;
 };
 
 export type ProjectDetail = ProjectListItem & {
+  seoTitle: string;
+  seoDescription: string;
+  ogImage: ProjectSeoImage;
+  operatingSystem: string;
   overview: string[];
   workflow: ProjectWorkflowStep[];
   features: ProjectFeature[];

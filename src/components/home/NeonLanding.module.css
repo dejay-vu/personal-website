@@ -202,7 +202,11 @@
 }
 
 /* ---------- hero wordmark: the master hologram ---------- */
+.heroHeading {
+  margin: 0;
+}
 .brand {
+  display: block;
   font-weight: 400;
   text-transform: uppercase;
   line-height: 0.9;

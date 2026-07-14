@@ -14,7 +14,7 @@ test('wide Darkroom rows align without stretching a sparse final row', async ({
 }, testInfo) => {
   test.skip(
     testInfo.project.name !== 'desktop-chromium',
-    'Wide-screen gallery geometry is covered by the desktop browser.',
+    'Wide-screen photo-grid geometry is covered by the desktop browser.',
   );
   await page.setViewportSize({ width: 1920, height: 900 });
   await page.goto('/darkroom');
@@ -643,4 +643,29 @@ test('canonical Photo detail keeps its full metadata view', async ({
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('article')).toBeVisible();
   await expect(page.locator('article h1')).toHaveCount(1);
+
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.getByRole('link', { name: 'Home' })).toHaveAttribute(
+    'href',
+    '/',
+  );
+  await expect(
+    breadcrumb.getByRole('link', { name: 'Darkroom' }),
+  ).toHaveAttribute('href', '/darkroom');
+  await expect(breadcrumb.locator('[aria-current="page"]')).toHaveCount(1);
+
+  const documents = (
+    await page.locator('script[type="application/ld+json"]').allTextContents()
+  ).map((value) => JSON.parse(value));
+  const image = documents.find(({ '@type': type }) => type === 'ImageObject');
+  const breadcrumbData = documents.find(
+    ({ '@type': type }) => type === 'BreadcrumbList',
+  );
+  expect(image?.creator).toMatchObject({
+    '@type': 'Person',
+    '@id': 'https://dejayvu.com/#person',
+    name: 'Junhao Zhang',
+    url: 'https://dejayvu.com/#person',
+  });
+  expect(breadcrumbData?.itemListElement).toHaveLength(3);
 });

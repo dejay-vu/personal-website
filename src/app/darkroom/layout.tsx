@@ -4,7 +4,7 @@ import { createSectionMetadata } from '@/lib/seo';
 
 export const metadata = createSectionMetadata({
   title: VENUES.photos.label,
-  description: `Photography from ${VENUES.photos.label} by Junhao Zhang (张俊豪), also known as Jay Zhang and DeJay Vu, featuring travel, hiking, and landscape photography.`,
+  description: `Photography from ${VENUES.photos.label} by Junhao Zhang, known as Jay, featuring travel, hiking, and landscape photography.`,
   path: VENUES.photos.path,
 });
 

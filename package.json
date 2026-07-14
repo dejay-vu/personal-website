@@ -39,6 +39,7 @@
     "prepare": "husky",
     "media:prewarm:dry-run": "tsx scripts/prewarm-media-variants.ts",
     "media:prewarm": "tsx scripts/prewarm-media-variants.ts --apply",
+    "assets:slurmdeck-og": "node scripts/generate-slurmdeck-og.mjs",
     "cdk": "cdk --app \"tsx infra/bin/media-stack.ts\"",
     "infra:synth": "cdk --app \"tsx infra/bin/media-stack.ts\" synth --quiet",
     "db:test:reset": "tsx scripts/assert-test-database.ts && prisma migrate reset --force",

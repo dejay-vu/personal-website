@@ -6,16 +6,32 @@ import type { ProjectDetail } from '@/modules/projects/types';
 
 import { toDate } from '@/lib/date';
 
+const PERSON_SAME_AS = [
+  'https://gravatar.com/dejayyvu',
+  'https://www.facebook.com/dejayyvu/',
+  'https://x.com/dejay_vu',
+  'https://www.youtube.com/channel/UCns_dACstxIrKFjlD6earSA',
+  'https://www.instagram.com/dejayyvu/',
+  'https://github.com/dejay-vu',
+  'https://www.linkedin.com/in/junhao-zh',
+  'https://eng.ox.ac.uk/people/junhao-zhang',
+  'https://orcid.org/0009-0003-7918-3208',
+  'https://www.researchgate.net/profile/Junhao-Zhang-37',
+  'https://openreview.net/profile?id=~Junhao_Zhang10',
+  'https://arxiv.org/a/zhang_j_34.html',
+] as const satisfies readonly `https://${string}`[];
+
 export const seoConfig = {
   siteUrl: 'https://dejayvu.com',
   siteName: 'DeJay Vu',
   personName: 'Junhao Zhang',
   chineseName: '张俊豪',
   primaryTitle: 'DeJay Vu',
-  alternateNames: ['张俊豪', 'Jay Zhang', 'DeJay Vu', 'dejayvu'],
+  alternateNames: ['Jay'],
   description:
-    'Junhao Zhang (张俊豪), also known as Jay Zhang and DeJay Vu, is a Machine Learning Software Engineer focused on GPU programming, advanced computing systems, photography, and hiking.',
-  email: 'junhao.zhang2301@gmail.com',
+    'Junhao Zhang, known as Jay, is a Machine Learning Software Engineer working on GPU programming, high-performance computing (HPC), and advanced computing systems, with interests in photography and hiking.',
+  profileImage:
+    'https://1.gravatar.com/avatar/d7761dea5bc1ed7ccbd7e0f806533725edac5e18c8f8ad5159611a85b576acc4?size=512',
   defaultImage: {
     // 1200x630 fixed-raster JPEG: below-1200 or auto-format (webp/avif) OG
     // images get downgraded or dropped by several social scrapers.
@@ -24,11 +40,7 @@ export const seoConfig = {
     height: 630,
     alt: 'DeJay Vu',
   },
-  sameAs: [
-    'https://github.com/dejay-vu',
-    'https://linkedin.com/in/junhao-zh',
-    'https://instagram.com/dejayyvu',
-  ],
+  sameAs: PERSON_SAME_AS,
 } as const;
 
 type SeoImage = {
@@ -51,6 +63,11 @@ type ArticleMetadataInput = PageMetadataInput & {
   modifiedTime?: Date | string;
   publishedTime?: Date | string;
   tags?: string[];
+};
+
+export type BreadcrumbItem = {
+  href: string;
+  label: string;
 };
 
 export function absoluteUrl(path = '/') {
@@ -167,21 +184,33 @@ export function createArticleMetadata({
   };
 }
 
-export function createPersonJsonLd() {
+const personId = () => absoluteUrl('/#person');
+const profilePageId = () => absoluteUrl('/#profile-page');
+const websiteId = () => absoluteUrl('/#website');
+
+function createPersonEntity() {
   return {
-    '@context': 'https://schema.org',
     '@type': 'Person',
-    '@id': absoluteUrl('/#person'),
+    '@id': personId(),
     name: seoConfig.personName,
     alternateName: seoConfig.alternateNames,
     url: seoConfig.siteUrl,
-    email: seoConfig.email,
+    mainEntityOfPage: {
+      '@id': profilePageId(),
+    },
+    image: seoConfig.profileImage,
     jobTitle: 'Machine Learning Software Engineer',
     description: seoConfig.description,
+    affiliation: {
+      '@type': 'CollegeOrUniversity',
+      name: 'University of Oxford',
+      url: 'https://www.ox.ac.uk/',
+    },
     knowsAbout: [
       'Machine Learning',
       'GPU programming',
       'CUDA',
+      'High-performance computing',
       'advanced computing systems',
       'photography',
       'hiking',
@@ -190,24 +219,66 @@ export function createPersonJsonLd() {
   };
 }
 
-export function createWebsiteJsonLd() {
+function createProfilePageEntity() {
   return {
-    '@context': 'https://schema.org',
+    '@type': 'ProfilePage',
+    '@id': profilePageId(),
+    url: seoConfig.siteUrl,
+    name: 'Junhao Zhang (Jay)',
+    description: seoConfig.description,
+    mainEntity: {
+      '@id': personId(),
+    },
+    isPartOf: {
+      '@id': websiteId(),
+    },
+  };
+}
+
+function createWebsiteEntity() {
+  return {
     '@type': 'WebSite',
-    '@id': absoluteUrl('/#website'),
+    '@id': websiteId(),
     name: seoConfig.siteName,
-    alternateName: [
-      'dejayvu',
-      'Junhao Zhang',
-      '张俊豪',
-      'Jay Zhang',
-      seoConfig.primaryTitle,
-    ],
+    alternateName: ['DeJay Vu', 'DeJayVu', 'dejayvu'],
     url: seoConfig.siteUrl,
     description: seoConfig.description,
     publisher: {
-      '@id': absoluteUrl('/#person'),
+      '@id': personId(),
     },
+  };
+}
+
+export function createHomeJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      createProfilePageEntity(),
+      createPersonEntity(),
+      createWebsiteEntity(),
+    ],
+  };
+}
+
+export function createBreadcrumbListJsonLd(items: readonly BreadcrumbItem[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map(({ href, label }, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: label,
+      item: absoluteUrl(href),
+    })),
+  };
+}
+
+function createAuthorEntity() {
+  return {
+    '@type': 'Person',
+    '@id': personId(),
+    name: seoConfig.personName,
+    url: personId(),
   };
 }
 
@@ -232,14 +303,8 @@ export function createNotePostingJsonLd({
     dateModified: toDate(note.updatedAt).toISOString(),
     wordCount: note.wordCount,
     timeRequired: `PT${note.readingTime}M`,
-    author: {
-      '@id': absoluteUrl('/#person'),
-      name: seoConfig.personName,
-    },
-    publisher: {
-      '@id': absoluteUrl('/#person'),
-      name: seoConfig.personName,
-    },
+    author: createAuthorEntity(),
+    publisher: createAuthorEntity(),
     keywords: note.categories.map((category) => category.name).join(', '),
   };
 }
@@ -255,27 +320,44 @@ export function createSoftwareSourceCodeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'SoftwareSourceCode',
     name: project.name,
-    description: project.pitch,
+    description: project.seoDescription,
     url,
     mainEntityOfPage: url,
     codeRepository: project.repoUrl,
+    downloadUrl: project.packageUrl,
     programmingLanguage: project.language,
+    operatingSystem: project.operatingSystem,
+    softwareVersion: project.version,
     runtimePlatform: project.requires,
+    image: absoluteUrl(project.ogImage.src),
+    screenshot: {
+      '@type': 'ImageObject',
+      contentUrl: absoluteUrl(project.screenshot.src),
+      width: project.screenshot.width,
+      height: project.screenshot.height,
+      caption: project.screenshot.caption,
+    },
     // Project.license holds an SPDX identifier, so the canonical SPDX page
     // stays correct for any future license.
     license: `https://spdx.org/licenses/${project.license}.html`,
     keywords: project.stack.join(', '),
     datePublished: toDate(project.publishedAt).toISOString(),
     dateModified: toDate(project.updatedAt).toISOString(),
-    author: {
-      '@id': absoluteUrl('/#person'),
-      name: seoConfig.personName,
-    },
+    author: createAuthorEntity(),
     targetProduct: {
       '@type': 'SoftwareApplication',
       name: project.name,
+      description: project.seoDescription,
       applicationCategory: 'DeveloperApplication',
+      downloadUrl: project.packageUrl,
+      operatingSystem: project.operatingSystem,
+      softwareVersion: project.version,
       installUrl: project.packageUrl,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
     },
   };
 }
@@ -306,10 +388,7 @@ export function createImageObjectJsonLd({
       : `${photo.title} photographed by ${seoConfig.personName}.`,
     uploadDate: toDate(photo.createdAt).toISOString(),
     dateModified: toDate(photo.updatedAt).toISOString(),
-    creator: {
-      '@id': absoluteUrl('/#person'),
-      name: seoConfig.personName,
-    },
+    creator: createAuthorEntity(),
     ...(location && {
       contentLocation: {
         '@type': 'Place',

@@ -13,7 +13,17 @@ export const PROJECTS: ProjectDetail[] = [
       'A local command-line tool and terminal UI for running code on a remote Slurm cluster.',
     abstract:
       'Keep editing locally; SlurmDeck snapshots the exact files a run needs, ships them over SSH, submits a command or parameter sweep, merges Slurm and per-task status, follows logs, and pulls results back — a reproducible replacement for hand-assembled rsync, sbatch, squeue, and sacct loops.',
+    seoTitle: 'SlurmDeck — Slurm CLI & TUI over SSH | DeJay Vu',
+    seoDescription:
+      'SlurmDeck is a local Slurm CLI and terminal UI for submitting jobs and parameter sweeps over SSH, monitoring remote HPC clusters, following logs, and fetching results.',
+    ogImage: {
+      src: '/assets/slurmdeck-og.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'SlurmDeck — Slurm CLI and terminal UI over SSH',
+    },
     version: '0.1.0',
+    operatingSystem: 'POSIX',
     language: 'Python',
     interfaceLabel: 'CLI + TUI',
     license: 'MIT',
