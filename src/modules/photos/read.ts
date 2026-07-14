@@ -327,10 +327,15 @@ export const getPhotoBySlug = unstable_cache(
   },
 );
 
-export const getPhotoSitemapEntries = unstable_cache(
+const getCachedPhotoSitemapEntries = unstable_cache(
   findPhotoSitemapEntries,
   ['photos', PHOTOS_CACHE_VERSION, 'sitemap-entries'],
   {
     tags: ['photos'],
   },
 );
+
+export const getPhotoSitemapEntries = () =>
+  process.env.NODE_ENV === 'test'
+    ? findPhotoSitemapEntries()
+    : getCachedPhotoSitemapEntries();

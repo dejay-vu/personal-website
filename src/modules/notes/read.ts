@@ -247,10 +247,15 @@ export const getPublishedNoteSlugs = unstable_cache(
   },
 );
 
-export const getPublishedNoteSitemapEntries = unstable_cache(
+const getCachedPublishedNoteSitemapEntries = unstable_cache(
   findPublishedNoteSitemapEntries,
   ['notes', NOTES_CACHE_VERSION, 'published-note-sitemap-entries'],
   {
     tags: [NOTES_CACHE_TAG],
   },
 );
+
+export const getPublishedNoteSitemapEntries = () =>
+  process.env.NODE_ENV === 'test'
+    ? findPublishedNoteSitemapEntries()
+    : getCachedPublishedNoteSitemapEntries();
