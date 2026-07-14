@@ -326,28 +326,24 @@
   object-fit: cover;
 }
 
-/* The Lab: still being wired up — same projection light as everything */
-.hazardline {
+/* The Lab: the newest instrument on the bench — same mono material as the
+   Field Notes marquee line, but static (one project needs no loop) and
+   truncating instead of overflowing the row. */
+.labLine {
   flex: 1;
-  height: 9px;
-  border-radius: 2px;
-  opacity: 0.55;
-  background: repeating-linear-gradient(
-    45deg,
-    color-mix(in oklab, var(--beam) 80%, transparent) 0 9px,
-    transparent 9px 18px
-  );
+  min-width: 0;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--neon-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.soonTag {
-  font-family: ui-monospace, var(--font-cjk), 'SFMono-Regular', monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: var(--beam);
-  border: 1px solid color-mix(in oklab, var(--beam) 45%, transparent);
-  border-radius: 3px;
-  padding: 3px 9px;
-  white-space: nowrap;
+.labLine b {
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Touch lays previews out at their final height from the first frame. This

@@ -22,7 +22,7 @@ export const DisplayFont = localFont({
 });
 
 // Chinese display face for the neon signage: 张俊豪 (footers) plus the
-// junction tags 随笔 / 暗房 / 实验室 and the 装修中 status chip.
+// junction tags 随笔 / 暗房 / 实验室.
 // Smiley Sans (得意黑) — bold, oblique — subset to only the glyphs used
 // (~3KB; regenerate via pyftsubset --text='…' --flavor=woff2).
 export const CjkDisplayFont = localFont({

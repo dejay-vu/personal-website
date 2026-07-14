@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { VENUES } from '@/config/venues';
 import type { NoteListItem } from '@/modules/notes/types';
 import type { PhotoListItem } from '@/modules/photos/types';
+import type { ProjectListItem } from '@/modules/projects/types';
 import clsx from 'clsx';
 
 import { rememberHomeGateReturn } from '@/lib/homeGateReturn';
@@ -17,18 +18,23 @@ import landing from './NeonLanding.module.css';
 
 type NeonJunctionProps = {
   // Live merchandise for the branch previews: the latest three note titles
-  // run the Field Notes marquee, and the latest photos loop through Darkroom.
+  // run the Field Notes marquee, the latest photos loop through Darkroom,
+  // and the newest project sits on The Lab's bench line.
   notes: NoteListItem[];
   photos: PhotoListItem[];
+  projects: ProjectListItem[];
   notesCount: number;
   photosCount: number;
+  projectsCount: number;
 };
 
 export function NeonJunction({
   notes,
   photos,
+  projects,
   notesCount,
   photosCount,
+  projectsCount,
 }: NeonJunctionProps) {
   const enter = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     // Modified clicks (new tab / window / download) keep native <a> behaviour.
@@ -42,6 +48,7 @@ export function NeonJunction({
 
   const latestNotes = notes.slice(0, 3);
   const latestPhotos = photos;
+  const featuredProject = projects.at(0);
 
   return (
     <section id="street" className={styles.junction}>
@@ -141,14 +148,19 @@ export function NeonJunction({
         holoAt="0.91"
         count={
           <>
-            <b>2026</b> opening
+            <b>{projectsCount}</b>{' '}
+            {projectsCount === 1 ? 'instrument' : 'instruments'}
           </>
         }
-        ariaLabel={`${VENUES.projects.label} — under construction, opening 2026`}
+        ariaLabel={`${VENUES.projects.label} — software projects, ${projectsCount} on the bench`}
         onEnter={enter}
       >
-        <span className={styles.hazardline} />
-        <span className={styles.soonTag}>装修中 · UNDER CONSTRUCTION</span>
+        {featuredProject && (
+          <span className={styles.labLine}>
+            ON THE BENCH — <b>{featuredProject.name}</b> ·{' '}
+            {featuredProject.pitch}
+          </span>
+        )}
       </Term>
     </section>
   );
