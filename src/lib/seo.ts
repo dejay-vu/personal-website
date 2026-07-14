@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import type { NoteListItem } from '@/modules/notes/types';
 import type { PhotoDetail } from '@/modules/photos/types';
+import type { ProjectDetail } from '@/modules/projects/types';
 
 import { toDate } from '@/lib/date';
 
@@ -240,6 +241,42 @@ export function createNotePostingJsonLd({
       name: seoConfig.personName,
     },
     keywords: note.categories.map((category) => category.name).join(', '),
+  };
+}
+
+export function createSoftwareSourceCodeJsonLd({
+  project,
+  url,
+}: {
+  project: ProjectDetail;
+  url: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareSourceCode',
+    name: project.name,
+    description: project.pitch,
+    url,
+    mainEntityOfPage: url,
+    codeRepository: project.repoUrl,
+    programmingLanguage: project.language,
+    runtimePlatform: project.requires,
+    // Project.license holds an SPDX identifier, so the canonical SPDX page
+    // stays correct for any future license.
+    license: `https://spdx.org/licenses/${project.license}.html`,
+    keywords: project.stack.join(', '),
+    datePublished: toDate(project.publishedAt).toISOString(),
+    dateModified: toDate(project.updatedAt).toISOString(),
+    author: {
+      '@id': absoluteUrl('/#person'),
+      name: seoConfig.personName,
+    },
+    targetProduct: {
+      '@type': 'SoftwareApplication',
+      name: project.name,
+      applicationCategory: 'DeveloperApplication',
+      installUrl: project.packageUrl,
+    },
   };
 }
 

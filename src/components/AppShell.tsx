@@ -47,7 +47,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href: VENUES.photos.path,
             label: VENUES.photos.label.toUpperCase(),
           }
-        : { href: APP_ROUTES.home, label: 'GATE' };
+        : section === venueSegment('projects') && sub
+          ? {
+              href: VENUES.projects.path,
+              label: VENUES.projects.label.toUpperCase(),
+            }
+          : { href: APP_ROUTES.home, label: 'GATE' };
 
   return (
     <div

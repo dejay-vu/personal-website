@@ -819,6 +819,221 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
 }
 
 /* ==============================================================
+   THE LAB — instrument grid + project detail
+   Material for the projects venue. Cards reuse the neon-card
+   system; these classes add the Lab-specific pieces: the display
+   -face nameplate, the reserved bench cell, and the detail page's
+   spec-sheet sections. Layout stays in Tailwind utilities inside
+   the components — only material lives here. No new animations
+   (the nameplate inherits the card title's flicker), so nothing
+   to add under prefers-reduced-motion.
+   ============================================================== */
+/* Project names render in the display face — the one Lab-specific
+   type move. Composes with .neon-card__title for color + ignition. */
+.neon-card__nameplate {
+  font-family: var(--font-display), 'Arial Narrow', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 1.35rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+/* A reserved bench: dashed outline where the next instrument lands. */
+.neon-bench {
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+  border: 1px dashed color-mix(in oklab, var(--neon-dim) 45%, transparent);
+  border-radius: 6px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--neon-dim) 65%, transparent);
+}
+
+/* Detail h1: holo-sign material at article scale. */
+.project-nameplate {
+  font-family: var(--font-display), 'Arial Narrow', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(28px, 5vw, 44px);
+  line-height: 1.1;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--neon-ink);
+  text-shadow:
+    0.8px 0 rgba(255, 46, 136, 0.22),
+    -0.8px 0 rgba(53, 230, 255, 0.22),
+    0 0 13px rgba(154, 138, 196, 0.55);
+}
+
+/* The mono manifest line outside a card (.neon-card__meta keys off
+   --card-hue, which is undefined on the detail page). */
+.project-meta {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--beam);
+}
+
+/* Spec-sheet section headers: mono chrome, not prose headings. */
+.project-section-title {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--beam);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--neon-line);
+}
+
+/* Workflow rail: an ordered sequence, so the rail encodes order. */
+.project-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.project-rail__step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3ch minmax(0, 1fr);
+  gap: 16px;
+  padding: 13px 0 13px 18px;
+  border-left: 1px solid color-mix(in oklab, var(--beam) 30%, transparent);
+}
+
+.project-rail__step::before {
+  content: '';
+  position: absolute;
+  left: -3.5px;
+  top: 21px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--beam);
+  box-shadow: 0 0 8px rgba(154, 138, 196, 0.8);
+}
+
+.project-rail__index {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  padding-top: 3px;
+  color: var(--beam);
+  text-shadow: 0 0 8px color-mix(in oklab, var(--beam) 45%, transparent);
+}
+
+.project-rail__title {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon-ink);
+  padding-top: 3px;
+}
+
+/* The console frame: the note-code-block recipe under a domain-correct
+   name (project pages must not borrow note vocabulary). */
+.project-console {
+  background-color: #0b0714;
+  border-radius: 6px;
+  padding: 10px;
+  border: 1px solid color-mix(in oklab, var(--beam) 38%, transparent);
+  box-shadow:
+    0 0 26px rgba(154, 138, 196, 0.14),
+    inset 0 0 0 1px rgba(244, 239, 255, 0.05);
+}
+
+.project-console img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* Quiet feature tile: the card gradient at lower presence, no ignition. */
+.project-tile {
+  border: 1px solid var(--neon-line);
+  border-radius: 4px;
+  padding: 16px 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(22, 9, 36, 0.45),
+    rgba(9, 5, 18, 0.55)
+  );
+}
+
+/* Mono spec manifest rows. */
+.project-spec {
+  margin: 0;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-spec > div {
+  display: grid;
+  grid-template-columns: 11ch minmax(0, 1fr);
+  gap: 12px;
+  padding: 7px 0;
+  border-top: 1px solid var(--neon-line);
+}
+
+.project-spec dt {
+  margin: 0;
+  color: var(--neon-dim);
+}
+
+.project-spec dd {
+  margin: 0;
+  color: var(--neon-ink);
+}
+
+.project-spec__install {
+  display: inline-block;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12.5px;
+  padding: 8px 14px;
+  border-radius: 4px;
+  background-color: #0b0714;
+  border: 1px solid color-mix(in oklab, var(--beam) 38%, transparent);
+  box-shadow:
+    0 0 26px rgba(154, 138, 196, 0.14),
+    inset 0 0 0 1px rgba(244, 239, 255, 0.05);
+  color: var(--neon-ink);
+  white-space: nowrap;
+}
+
+/* Mono external link on the spec sheet — the holo-return material. */
+.project-link {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--neon-dim);
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    text-shadow 0.15s;
+}
+
+.project-link:hover {
+  color: #fff;
+  text-shadow: 0 0 9px var(--beam);
+}
+
+.project-link:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ==============================================================
    NEON DEEP SHELL
    Quiet-neon ambience for the deep pages (article/photo/list/
    contact): faint corner hue glows + vignette on the flat night
@@ -983,7 +1198,8 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
   .neon-card,
   .neon-tile,
   .neon-ticket,
-  .neon-search-group {
+  .neon-search-group,
+  .project-link {
     transition: none;
   }
 

@@ -8,6 +8,7 @@ import {
 } from '@/config/media';
 import type { NoteListItem } from '@/modules/notes/types';
 import type { PhotoListItem } from '@/modules/photos/types';
+import type { ProjectListItem } from '@/modules/projects/types';
 import { useGSAP } from '@gsap/react';
 
 import { CjkDisplayFont, DisplayFont } from '@/styles/fonts';
@@ -30,12 +31,15 @@ import { initNeonScroll } from './neonScroll';
 
 type NeonLandingProps = {
   // Previews live at the neon-spine junction (latest note titles run the
-  // Field Notes marquee, latest photos run through the Darkroom row) —
-  // the full feeds live on /field-notes and /darkroom, entered via the branches.
+  // Field Notes marquee, latest photos run through the Darkroom row, the
+  // newest project sits on The Lab's bench line) — the full feeds live on
+  // the venue pages, entered via the branches.
   notes: NoteListItem[];
   photos: PhotoListItem[];
+  projects: ProjectListItem[];
   notesCount: number;
   photosCount: number;
+  projectsCount: number;
 };
 
 // The landing's sections (the venue sections collapsed into the single
@@ -122,8 +126,10 @@ function Track({ children }: { children: React.ReactNode }) {
 export function NeonLanding({
   notes,
   photos,
+  projects,
   notesCount,
   photosCount,
+  projectsCount,
 }: NeonLandingProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const bgImageRef = useRef<HTMLDivElement>(null);
@@ -540,8 +546,10 @@ export function NeonLanding({
             <NeonJunction
               notes={notes}
               photos={photos}
+              projects={projects}
               notesCount={notesCount}
               photosCount={photosCount}
+              projectsCount={projectsCount}
             />
           </Track>
 

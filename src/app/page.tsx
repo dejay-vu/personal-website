@@ -2,6 +2,10 @@ import { preload } from 'react-dom';
 
 import { getPublishedNotesCount, getPublishedNotesPage } from '@/modules/notes';
 import { getPhotosCount, getPhotosPage } from '@/modules/photos';
+import {
+  getPublishedProjects,
+  getPublishedProjectsCount,
+} from '@/modules/projects';
 
 import { createPersonJsonLd, createWebsiteJsonLd } from '@/lib/seo';
 
@@ -10,10 +14,11 @@ import { NeonLanding } from '@/components/home';
 
 // The single page previews the feeds at the neon-spine junction (latest
 // note titles run the Field Notes marquee, latest photos run through the
-// Darkroom row) and enters the full /field-notes and /darkroom pages (endless
-// scroll, search, filters) through the branch signs. Statically rendered +
-// revalidated hourly; underlying reads are unstable_cache'd on the
-// 'notes'/'photos' tags, so admin edits invalidate this page too.
+// Darkroom row, the newest project sits on The Lab's bench line) and enters
+// the full venue pages through the branch signs. Statically rendered +
+// revalidated hourly; underlying note/photo reads are unstable_cache'd on
+// the 'notes'/'photos' tags, so admin edits invalidate this page too
+// (project data is compiled in and changes with deploys).
 export const dynamic = 'force-static';
 export const revalidate = 3600;
 
@@ -30,11 +35,20 @@ export default async function Home() {
     type: 'image/webp',
   });
 
-  const [notesPage, photosPage, notesCount, photosCount] = await Promise.all([
+  const [
+    notesPage,
+    photosPage,
+    notesCount,
+    photosCount,
+    projects,
+    projectsCount,
+  ] = await Promise.all([
     getPublishedNotesPage({ limit: HOME_NOTES_PREVIEW }),
     getPhotosPage({ filters: {}, limit: HOME_PHOTOS_PREVIEW }),
     getPublishedNotesCount(),
     getPhotosCount(),
+    getPublishedProjects(),
+    getPublishedProjectsCount(),
   ]);
 
   return (
@@ -43,8 +57,10 @@ export default async function Home() {
       <NeonLanding
         notes={notesPage.notes}
         photos={photosPage.photos}
+        projects={projects}
         notesCount={notesCount}
         photosCount={photosCount}
+        projectsCount={projectsCount}
       />
     </>
   );
