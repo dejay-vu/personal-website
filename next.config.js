@@ -10,6 +10,8 @@ function getHostname(value) {
   }
 }
 
+const { legacyRouteRedirects } = require('./config/legacy-route-redirects');
+
 const imageHostnames = Array.from(
   new Set(
     [
@@ -126,6 +128,9 @@ const nextConfig = {
         headers: securityHeaders,
       },
     ];
+  },
+  async redirects() {
+    return legacyRouteRedirects;
   },
 };
 
