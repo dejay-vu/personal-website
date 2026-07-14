@@ -12,7 +12,7 @@ const EAGER_PHOTO_COUNT = 9;
 const PRIORITY_PHOTO_COUNT = 3;
 
 // Justified rows: every photo carries its true aspect ratio as --ar and the
-// CSS does the row math. Completed rows resolve to the same gallery edges;
+// CSS does the row math. Completed rows resolve to the same grid edges;
 // the final row stays at the target row height instead of enlarging a sparse
 // set of photos to fill a wide viewport.
 function getAspectRatio(photo: PhotoListItem) {

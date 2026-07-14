@@ -436,7 +436,7 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
    PhotoCard, ticket chips, feed chrome, search, article prose).
    Only public components reference these classes, so admin
    (.app-neutral) never renders them. Everything keys off
-   --card-hue; the thoughts grid cycles it via nth-child — safe
+   --card-hue; the notes grid cycles it via nth-child — safe
    because both feeds are append-only, so child positions (and
    therefore hues) never shift. No backdrop-filter anywhere: the
    only always-on costs are 1px borders and static shadows.
@@ -592,7 +592,7 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
   text-shadow: 0 0 8px var(--card-hue, var(--beam));
 }
 
-/* Lightbox tile (gallery). One shared projection light. */
+/* Lightbox tile (photo grid). One shared projection light. */
 .neon-tile {
   --card-hue: var(--beam);
   border-radius: 6px;
@@ -1150,7 +1150,7 @@ html[data-theme-transition='true'] [data-theme-switch-icon] {
 }
 
 /* ==============================================================
-   NEON JUSTIFIED GALLERY
+   NEON JUSTIFIED PHOTO GRID
    Equal-height photo rows at TRUE aspect ratios (zero cropping):
    within a flex row, grow ∝ ratio and basis ∝ ratio resolve widths
    exactly proportional to each photo's --ar, so height = width/ar

@@ -42,7 +42,7 @@ src/services/        AWS helpers and contact attachment storage
 src/lib/             Shared auth, media, SEO, validation, and utility logic
 prisma/              Prisma schema
 infra/               AWS CDK contact stack and external media contract
-scripts/             Guarded domain reset, verification, and media prewarming
+scripts/             Repository checks, release verification, and media prewarming
 ```
 
 ## Local Development

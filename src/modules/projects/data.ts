@@ -21,7 +21,7 @@ export const PROJECTS: ProjectDetail[] = [
     repoUrl: 'https://github.com/dejay-vu/slurmdeck',
     packageUrl: 'https://pypi.org/project/slurmdeck/',
     screenshot: {
-      src: '/projects/slurmdeck-tui.svg',
+      src: '/assets/slurmdeck-tui.svg',
       width: 2068,
       height: 758,
       alt: 'SlurmDeck terminal UI showing the wide Runs screen in the dark theme',

@@ -17,13 +17,11 @@ import {
   awsS3ListVersions,
 } from '../../src/services/awsS3';
 
-test('AWS clients and maintenance scripts use the default provider chain', () => {
+test('AWS clients use the default provider chain', () => {
   for (const file of [
     'src/services/awsS3.ts',
     'src/services/awsCloudFront.ts',
     'src/modules/media/awsRuntimeHealth.ts',
-    'scripts/domain-reset/export.ts',
-    'scripts/domain-reset/cleanup.ts',
   ]) {
     const source = readFileSync(file, 'utf8');
 

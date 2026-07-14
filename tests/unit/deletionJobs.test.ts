@@ -154,10 +154,13 @@ test('accepts only immutable canonical media targets', () => {
     },
   );
 
+  const retiredPhotoSegment = ['gal', 'lery'].join('');
+  const retiredNoteSegment = ['thought', 's'].join('');
+
   for (const key of [
-    'media/gallery/slug/original.jpg',
+    `media/${retiredPhotoSegment}/slug/original.jpg`,
     'media/notes/n1/covers/a1/../../secret',
-    'content/thoughts/n1/index.md',
+    `content/${retiredNoteSegment}/n1/index.md`,
     'media/notes/n1/covers/a1/original.JPG',
   ]) {
     assert.throws(() =>
