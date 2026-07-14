@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import type { NoteListItem } from '@/modules/notes/types';
+import { getPhotoSeoPresentation } from '@/modules/photos/presentation';
 import type { PhotoDetail } from '@/modules/photos/types';
 import type { ProjectDetail } from '@/modules/projects/types';
 
@@ -131,6 +132,11 @@ function baseMetadata({
       : {
           index: true,
           follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-image-preview': 'large',
+          },
         },
   };
 }
@@ -363,36 +369,42 @@ export function createSoftwareSourceCodeJsonLd({
 }
 
 export function createImageObjectJsonLd({
-  image,
+  contentUrl,
   photo,
+  thumbnailUrl,
   url,
 }: {
-  image: string;
+  contentUrl: string;
   photo: PhotoDetail;
+  thumbnailUrl: string;
   url: string;
 }) {
-  const country = photo.tags.find(({ tag }) => tag.field === 'country')?.tag
-    .label;
-  const area = photo.tags.find(({ tag }) => tag.field === 'area')?.tag.label;
-  const location = [area, country].filter(Boolean).join(', ');
+  const presentation = getPhotoSeoPresentation(photo);
+  const dateCreated = [photo.capturedAt, photo.dateTimeOriginal]
+    .filter((value): value is NonNullable<typeof value> => value !== null)
+    .map(toDate)
+    .find((value) => !Number.isNaN(value.getTime()))
+    ?.toISOString();
 
   return {
     '@context': 'https://schema.org',
     '@type': 'ImageObject',
-    name: photo.title,
-    contentUrl: image,
-    thumbnailUrl: image,
+    name: presentation.name,
+    contentUrl,
+    thumbnailUrl,
     url,
-    description: location
-      ? `${photo.title} photographed in ${location} by ${seoConfig.personName}.`
-      : `${photo.title} photographed by ${seoConfig.personName}.`,
+    mainEntityOfPage: url,
+    description: presentation.description,
     uploadDate: toDate(photo.createdAt).toISOString(),
     dateModified: toDate(photo.updatedAt).toISOString(),
+    ...(dateCreated && { dateCreated }),
     creator: createAuthorEntity(),
-    ...(location && {
+    creditText: seoConfig.personName,
+    copyrightNotice: `© ${seoConfig.personName}. All rights reserved.`,
+    ...(presentation.location && {
       contentLocation: {
         '@type': 'Place',
-        name: location,
+        name: presentation.location,
       },
     }),
   };

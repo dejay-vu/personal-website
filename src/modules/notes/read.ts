@@ -22,7 +22,7 @@ export {
   NOTES_MAX_PAGE_SIZE,
   normalizeNotesPageInput,
 } from './pageInput';
-const NOTES_CACHE_VERSION = 'v4';
+const NOTES_CACHE_VERSION = 'v5';
 
 const noteListSelect = {
   abstract: true,
@@ -177,6 +177,11 @@ async function findPublishedNoteSitemapEntries() {
       published: true,
     },
     select: {
+      coverMedia: {
+        select: {
+          originalKey: true,
+        },
+      },
       slug: true,
       publishedAt: true,
       updatedAt: true,

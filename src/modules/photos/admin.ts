@@ -229,6 +229,7 @@ function revalidatePhotos() {
   runCacheRevalidation(() => {
     revalidateTag('photos', 'max');
     revalidatePath(VENUES.photos.path);
+    revalidatePath('/sitemap.xml');
   });
 }
 

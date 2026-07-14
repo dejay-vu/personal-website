@@ -39,7 +39,9 @@ test('exposes published projects through the read seam', async () => {
   assert.ok(
     sitemapEntries.every(
       (entry) =>
-        entry.publishedAt instanceof Date && entry.updatedAt instanceof Date,
+        entry.publishedAt instanceof Date &&
+        entry.updatedAt instanceof Date &&
+        entry.screenshot.src.startsWith('/assets/'),
     ),
   );
 });

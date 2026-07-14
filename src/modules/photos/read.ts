@@ -25,7 +25,7 @@ export {
   PHOTOS_PAGE_SIZE,
   normalizePhotosPageInput,
 } from './pageInput';
-const PHOTOS_CACHE_VERSION = 'v3';
+const PHOTOS_CACHE_VERSION = 'v4';
 
 const photoOrderBy = [
   { createdAt: 'desc' },
@@ -34,6 +34,9 @@ const photoOrderBy = [
 
 export type PhotoSitemapEntries = {
   photos: {
+    mediaAsset: {
+      originalKey: string;
+    };
     slug: string;
     updatedAt: Date;
   }[];
@@ -267,6 +270,11 @@ async function findPhotoSitemapEntries(): Promise<PhotoSitemapEntries> {
       archivedAt: null,
     },
     select: {
+      mediaAsset: {
+        select: {
+          originalKey: true,
+        },
+      },
       slug: true,
       updatedAt: true,
     },

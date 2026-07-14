@@ -54,15 +54,18 @@ export async function getPublishedProjectsCount(): Promise<number> {
 
 export type ProjectSitemapEntry = Pick<
   ProjectListItem,
-  'slug' | 'publishedAt' | 'updatedAt'
+  'slug' | 'publishedAt' | 'screenshot' | 'updatedAt'
 >;
 
 export async function getPublishedProjectSitemapEntries(): Promise<
   ProjectSitemapEntry[]
 > {
-  return publishedProjects().map(({ slug, publishedAt, updatedAt }) => ({
-    slug,
-    publishedAt,
-    updatedAt,
-  }));
+  return publishedProjects().map(
+    ({ slug, publishedAt, screenshot, updatedAt }) => ({
+      slug,
+      publishedAt,
+      screenshot,
+      updatedAt,
+    }),
+  );
 }

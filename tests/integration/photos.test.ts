@@ -13,6 +13,7 @@ import {
   purgeAdminPhoto,
   updateAdminPhoto,
 } from '../../src/modules/photos/admin';
+import { getPhotoSitemapEntries } from '../../src/modules/photos/read';
 import {
   configureStorageDeletionTestEnvironment,
   resetDatabase,
@@ -49,6 +50,34 @@ async function seedPhoto(slug: string) {
     },
   });
 }
+
+test('photo sitemap reads the public media key and excludes archives', async () => {
+  const visible = await seedPhoto('sitemap-visible-photo');
+  const archived = await seedPhoto('sitemap-archived-photo');
+  await prisma.photo.update({
+    data: { archivedAt: new Date() },
+    where: { id: archived.id },
+  });
+
+  const persisted = await prisma.photo.findUniqueOrThrow({
+    include: { mediaAsset: true },
+    where: { id: visible.id },
+  });
+  const entries = await getPhotoSitemapEntries();
+
+  assert.deepEqual(
+    entries.photos.map(({ mediaAsset, slug }) => ({
+      originalKey: mediaAsset.originalKey,
+      slug,
+    })),
+    [
+      {
+        originalKey: persisted.mediaAsset.originalKey,
+        slug: visible.slug,
+      },
+    ],
+  );
+});
 
 test('photo preflight rejects database and same-batch slug conflicts', async () => {
   await seedPhoto('occupied-photo');

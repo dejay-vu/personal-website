@@ -27,6 +27,7 @@ export const MEDIA_VARIANT_WIDTHS = {
   card: 480,
   noteCover: 1200,
   modal: 2048,
+  seo: 2048,
 } as const;
 
 // Keep in sync with the responsive candidates from images.imageSizes and

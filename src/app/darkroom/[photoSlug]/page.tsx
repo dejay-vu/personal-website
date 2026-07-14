@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { APP_ROUTES, VENUES, photoPath } from '@/config/venues';
 import { getPhotoBySlug, getPhotoSitemapEntries } from '@/modules/photos';
+import { getPhotoSeoPresentation } from '@/modules/photos/presentation';
 
 import { MEDIA_VARIANT_WIDTHS, getMediaImageURL } from '@/lib/media';
 import {
@@ -16,10 +17,6 @@ import {
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { JsonLd } from '@/components/JsonLd';
 import { PhotoDetail } from '@/components/photos/PhotoDetail';
-import {
-  getPhotoAltText,
-  getPhotoDisplayTitle,
-} from '@/components/photos/photoAlt';
 import { getPhotoDisplayDimensions } from '@/components/photos/photoDimensions';
 
 const OG_IMAGE_WIDTH = 1200;
@@ -51,14 +48,15 @@ export async function generateMetadata({
     format: 'jpeg',
   });
   const dimensions = getPhotoDisplayDimensions(photo);
+  const presentation = getPhotoSeoPresentation(photo);
 
   return createPageMetadata({
     // Bare title: the root layout's title.template appends the site name.
-    title: `${photo.title} | ${VENUES.photos.label}`,
-    description: `${photo.title}, photographed by Junhao Zhang (Jay).`,
+    title: `${presentation.name} | ${VENUES.photos.label}`,
+    description: presentation.description,
     path: photoPath(photo.slug),
     image: {
-      alt: photo.title,
+      alt: presentation.name,
       url: image,
       width: OG_IMAGE_WIDTH,
       height: Math.round(
@@ -74,17 +72,22 @@ export default async function Page({ params }: PageProps) {
 
   if (!photo) notFound();
 
-  const image = getMediaImageURL({
+  const contentUrl = getMediaImageURL({
+    key: photo.mediaAsset.originalKey,
+    width: MEDIA_VARIANT_WIDTHS.seo,
+  });
+  const thumbnailUrl = getMediaImageURL({
     key: photo.mediaAsset.originalKey,
     width: MEDIA_VARIANT_WIDTHS.card,
   });
   const url = absoluteUrl(photoPath(photo.slug));
+  const presentation = getPhotoSeoPresentation(photo);
   const breadcrumbs = [
     { href: APP_ROUTES.home, label: 'Home' },
     { href: VENUES.photos.path, label: VENUES.photos.label },
     {
       href: photoPath(photo.slug),
-      label: getPhotoDisplayTitle(photo) ?? getPhotoAltText(photo),
+      label: presentation.name,
     },
   ] satisfies readonly BreadcrumbItem[];
 
@@ -95,8 +98,9 @@ export default async function Page({ params }: PageProps) {
       <PhotoDetail photo={photo} />
       <JsonLd
         data={createImageObjectJsonLd({
-          image,
+          contentUrl,
           photo,
+          thumbnailUrl,
           url,
         })}
       />
