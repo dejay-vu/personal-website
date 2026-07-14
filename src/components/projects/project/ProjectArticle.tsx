@@ -52,9 +52,10 @@ export function ProjectArticle({ project }: { project: ProjectDetail }) {
       <section className="mt-12">
         <h2 className="project-section-title">Overview</h2>
         <div className="flex max-w-prose flex-col gap-4 pt-5">
-          {project.overview.map((paragraph) => (
+          {project.overview.map((paragraph, index) => (
+            // Static ordered content: the position is the identity.
             <p
-              key={paragraph.slice(0, 32)}
+              key={index}
               className="text-[0.98rem] leading-8 text-foreground/85"
             >
               {paragraph}
