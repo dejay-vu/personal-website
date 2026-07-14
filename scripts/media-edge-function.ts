@@ -25,6 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import { assertAwsContract } from '../src/modules/media/awsContract';
+import { parseCloudFrontFunctionOutput } from './media-edge-output';
 
 config({ path: '.env.local' });
 config();
@@ -419,10 +420,7 @@ async function runFunctionTest({
     throw new Error('CloudFront Function test returned no output.');
   }
 
-  return JSON.parse(result.TestResult.FunctionOutput) as Record<
-    string,
-    unknown
-  >;
+  return parseCloudFrontFunctionOutput(result.TestResult.FunctionOutput);
 }
 
 function decodeFunctionBody(value: unknown) {
