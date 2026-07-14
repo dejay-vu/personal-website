@@ -26,6 +26,10 @@ import { promisify } from 'node:util';
 
 import { assertAwsContract } from '../src/modules/media/awsContract';
 import { parseCloudFrontFunctionOutput } from './media-edge-output';
+import {
+  type ApprovedSourceState,
+  getDriftSourceState,
+} from './media-edge-state';
 
 config({ path: '.env.local' });
 config();
@@ -76,8 +80,6 @@ type MediaEdgeContract = {
     targetSourceSha256: string;
   };
 };
-
-type LiveSourceState = 'baseline' | 'target';
 
 function sha256(value: Uint8Array | string) {
   return createHash('sha256').update(value).digest('hex');
@@ -208,7 +210,7 @@ async function getFunctionSource(
 function sourceState(
   hash: string,
   contract: MediaEdgeContract,
-): LiveSourceState {
+): ApprovedSourceState {
   if (hash === contract.viewerRequest.baselineSourceSha256) return 'baseline';
   if (hash === contract.viewerRequest.targetSourceSha256) return 'target';
   throw new Error(
@@ -330,7 +332,7 @@ async function waitForDriftDetection(
 async function verifyStackDrift(
   client: CloudFormationClient,
   contract: MediaEdgeContract,
-  state: LiveSourceState,
+  developmentState: ApprovedSourceState,
 ) {
   const stackName = contract.viewerRequest.ownerStack;
   const detection = await client.send(
@@ -357,7 +359,9 @@ async function verifyStackDrift(
 
   const allowances = [
     ...contract.driftPolicy.known,
-    ...(state === 'target' ? contract.driftPolicy.afterViewerRequestPatch : []),
+    ...(developmentState === 'target'
+      ? contract.driftPolicy.afterViewerRequestPatch
+      : []),
   ];
   assertAllowedDrift(drifts, allowances);
 }
@@ -609,7 +613,17 @@ async function main() {
   await assertExpectedIdentity(sts, contract);
   await assertDistributionAssociation(cloudFront, contract);
   const live = await assertFunctionIdentity(cloudFront, contract);
-  await verifyStackDrift(cloudFormation, contract, live.state);
+  const development = await getFunctionSource(
+    cloudFront,
+    contract.viewerRequest.functionName,
+    'DEVELOPMENT',
+  );
+  const developmentState = sourceState(sha256(development.code), contract);
+  await verifyStackDrift(
+    cloudFormation,
+    contract,
+    getDriftSourceState(live.state, developmentState),
+  );
 
   if (mode === 'verify') {
     console.log(
