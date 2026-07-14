@@ -1,6 +1,7 @@
 import { App } from 'aws-cdk-lib';
 import { Template } from 'aws-cdk-lib/assertions';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
@@ -16,6 +17,19 @@ type TemplateResource = {
 };
 
 type ExternalMediaContract = {
+  accountId: string;
+  driftPolicy: {
+    afterViewerRequestPatch: Array<{
+      logicalResourceId: string;
+      propertyPath: string;
+    }>;
+    known: Array<{
+      actualValue: string;
+      expectedValue: string;
+      logicalResourceId: string;
+      propertyPath: string;
+    }>;
+  };
   imageOptimization: {
     environment: Record<string, string>;
     functionName: string;
@@ -39,6 +53,25 @@ type ExternalMediaContract = {
     ownerStack: string;
     publicHost: string;
     versioningState: string;
+  };
+  viewerRequest: {
+    baselineSourceSha256: string;
+    cloudFormationLogicalId: string;
+    distributionId: string;
+    eventType: string;
+    functionName: string;
+    ownerStack: string;
+    robots: {
+      cacheControl: string;
+      contentType: string;
+      getBody: string;
+      methods: string[];
+      path: string;
+      statusCode: number;
+    };
+    runtime: string;
+    sourceFile: string;
+    targetSourceSha256: string;
   };
 };
 
@@ -103,7 +136,7 @@ test('AWS infrastructure keeps media as a versioned external structure contract'
   const cdk = readJson<{ context: Record<string, unknown> }>('cdk.json');
   const appSource = readFileSync('infra/bin/media-stack.ts', 'utf8');
 
-  assert.equal(contract.schemaVersion, 1);
+  assert.equal(contract.schemaVersion, 2);
   assert.equal(contract.storageLayoutVersion, STORAGE_LAYOUT_VERSION);
   assert.equal(contract.managedByThisRepository, false);
   assert.equal(contract.originals.owner, 'external-unmanaged');
@@ -136,6 +169,37 @@ test('AWS infrastructure keeps media as a versioned external structure contract'
     contract.imageOptimization.environment.transformedImageBucketName,
     contract.transformed.bucketName,
   );
+  assert.match(contract.accountId, /^\d{12}$/);
+  assert.equal(
+    contract.viewerRequest.distributionId,
+    contract.transformed.cloudFrontDistributionId,
+  );
+  assert.equal(contract.viewerRequest.ownerStack, 'ImgTransformationStack');
+  assert.equal(contract.viewerRequest.runtime, 'cloudfront-js-1.0');
+  assert.equal(contract.viewerRequest.eventType, 'viewer-request');
+  assert.equal(contract.viewerRequest.robots.path, '/robots.txt');
+  assert.deepEqual(contract.viewerRequest.robots.methods, ['GET', 'HEAD']);
+  assert.equal(contract.viewerRequest.robots.statusCode, 200);
+  assert.equal(
+    createHash('sha256')
+      .update(readFileSync(contract.viewerRequest.sourceFile))
+      .digest('hex'),
+    contract.viewerRequest.targetSourceSha256,
+  );
+  assert.deepEqual(contract.driftPolicy.known, [
+    {
+      actualValue: '50000000',
+      expectedValue: '4700000',
+      logicalResourceId: 'imageoptimization4C49F079',
+      propertyPath: '/Environment/Variables/maxImageSize',
+    },
+  ]);
+  assert.deepEqual(contract.driftPolicy.afterViewerRequestPatch, [
+    {
+      logicalResourceId: contract.viewerRequest.cloudFormationLogicalId,
+      propertyPath: '/FunctionCode',
+    },
+  ]);
   const infrastructureGuide = readFileSync('infra/README.md', 'utf8');
   assert.match(infrastructureGuide, /owner-only runtime health endpoint/);
   assert.match(infrastructureGuide, /`s3:ListBucket`/);
@@ -147,6 +211,16 @@ test('AWS infrastructure keeps media as a versioned external structure contract'
     'region',
   ]);
   assert.doesNotMatch(appSource, /MediaImageTransformationConfigStack/);
+  const edgeTool = readFileSync('scripts/media-edge-function.ts', 'utf8');
+  assert.match(edgeTool, /--verify/);
+  assert.match(edgeTool, /--apply/);
+  assert.match(edgeTool, /UpdateFunctionCommand/);
+  assert.match(edgeTool, /TestFunctionCommand/);
+  assert.match(edgeTool, /PublishFunctionCommand/);
+  assert.match(edgeTool, /DetectStackDriftCommand/);
+  assert.match(edgeTool, /ls-remote/);
+  assert.match(edgeTool, /refs\/heads\/main/);
+  assert.doesNotMatch(edgeTool, /cdk deploy|cloudformation deploy/i);
 });
 
 test('AWS infrastructure documentation uses stable and safe language', () => {

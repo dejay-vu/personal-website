@@ -3,6 +3,9 @@
 This repository manages only the Contact attachment stack. The existing media
 pipeline is represented by the committed read-only contract in
 `infra/external-media-contract.json`; this CDK app does not deploy or import it.
+The one reviewed exception is the exact CloudFront viewer-request Function
+source in `infra/cloudfront/url-rewrite-function.js`, which can be verified or
+patched with the guarded commands below without redeploying its owner stack.
 
 ## Ownership
 
@@ -83,6 +86,40 @@ corepack npm run cdk -- diff ContactAttachmentsStack
 
 Do not import or deploy external media resources as part of an application
 release.
+
+## Media edge Function
+
+The transformed-image distribution uses an externally owned CloudFront
+Function to normalize image transformation parameters. Its committed source
+retains the original Amazon MIT-0 header and adds an origin-free response for
+the exact `/robots.txt` path. `GET` returns the crawler allow policy and `HEAD`
+returns the same status and headers without a body; query parameters do not
+change that response.
+
+The non-deploying verification command checks the AWS account, non-root caller,
+distribution association, Function name/runtime, approved source hashes, and a
+fresh CloudFormation drift report:
+
+```bash
+AWS_PROFILE=dejayvu corepack npm run media:edge:verify
+```
+
+The write command is deliberately narrower than a stack deployment. It is
+permitted only from a clean local `main` that exactly matches the current
+remote `main`. It accepts only the recorded baseline or target source hash,
+updates DEVELOPMENT, runs the Function contract tests there, and publishes to
+LIVE only after they pass:
+
+```bash
+AWS_PROFILE=dejayvu corepack npm run media:edge:apply
+```
+
+Run `media:edge:apply` only after the source and contract commit is merged to
+`main`. Never use this as authorization to run the repository CDK app or deploy
+`ImgTransformationStack`. The drift gate allows the recorded image Lambda
+`maxImageSize` difference. Once the Function target is live, it additionally
+allows only that Function's `/FunctionCode` difference; every other drift
+blocks verification and publication.
 
 ## Read-only live audit
 

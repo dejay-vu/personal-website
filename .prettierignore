@@ -22,3 +22,4 @@ docs/superpowers/
 package-lock.json
 CHANGELOG.md
 public/background.webp
+infra/cloudfront/url-rewrite-function.js

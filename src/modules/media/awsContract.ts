@@ -2,6 +2,19 @@ import { DEFAULT_PUBLIC_MEDIA_HOSTS } from './publicConfig';
 import { STORAGE_LAYOUT_VERSION } from './storageKeys';
 
 type ExternalMediaContract = {
+  accountId?: string;
+  driftPolicy?: {
+    afterViewerRequestPatch?: Array<{
+      logicalResourceId?: string;
+      propertyPath?: string;
+    }>;
+    known?: Array<{
+      actualValue?: string;
+      expectedValue?: string;
+      logicalResourceId?: string;
+      propertyPath?: string;
+    }>;
+  };
   imageOptimization?: {
     environment?: {
       originalImageBucketName?: string;
@@ -29,9 +42,29 @@ type ExternalMediaContract = {
     publicHost?: string;
     versioningState?: string;
   };
+  viewerRequest?: {
+    baselineSourceSha256?: string;
+    cloudFormationLogicalId?: string;
+    distributionId?: string;
+    eventType?: string;
+    functionName?: string;
+    ownerStack?: string;
+    robots?: {
+      cacheControl?: string;
+      contentType?: string;
+      getBody?: string;
+      methods?: string[];
+      path?: string;
+      statusCode?: number;
+    };
+    runtime?: string;
+    sourceFile?: string;
+    targetSourceSha256?: string;
+  };
 };
 
 const S3_VERSIONING_STATES = new Set(['Enabled', 'NeverEnabled', 'Suspended']);
+const SHA_256 = /^[a-f0-9]{64}$/;
 
 export function getAwsContractIssues(value: unknown) {
   if (!value || typeof value !== 'object') {
@@ -43,10 +76,14 @@ export function getAwsContractIssues(value: unknown) {
   const originals = contract.originals;
   const transformed = contract.transformed;
   const imageOptimization = contract.imageOptimization;
+  const viewerRequest = contract.viewerRequest;
 
-  if (contract.schemaVersion !== 1) issues.push('schemaVersion must be 1');
+  if (contract.schemaVersion !== 2) issues.push('schemaVersion must be 2');
   if (contract.storageLayoutVersion !== STORAGE_LAYOUT_VERSION) {
     issues.push('storageLayoutVersion does not match application code');
+  }
+  if (!/^\d{12}$/.test(contract.accountId ?? '')) {
+    issues.push('AWS account identity is invalid');
   }
   if (!contract.region) issues.push('AWS region is missing');
   if (contract.managedByThisRepository !== false) {
@@ -108,6 +145,62 @@ export function getAwsContractIssues(value: unknown) {
       transformed?.bucketName
   ) {
     issues.push('image optimization bucket mapping is inconsistent');
+  }
+  if (viewerRequest?.ownerStack !== transformed?.ownerStack) {
+    issues.push('viewer-request function owner stack is inconsistent');
+  }
+  if (viewerRequest?.distributionId !== transformed?.cloudFrontDistributionId) {
+    issues.push('viewer-request distribution identity is inconsistent');
+  }
+  if (
+    !viewerRequest?.functionName ||
+    !viewerRequest.cloudFormationLogicalId ||
+    !viewerRequest.sourceFile
+  ) {
+    issues.push('viewer-request function identity is missing');
+  }
+  if (viewerRequest?.runtime !== 'cloudfront-js-1.0') {
+    issues.push('viewer-request runtime must remain cloudfront-js-1.0');
+  }
+  if (viewerRequest?.eventType !== 'viewer-request') {
+    issues.push('viewer-request event association is invalid');
+  }
+  if (
+    !SHA_256.test(viewerRequest?.baselineSourceSha256 ?? '') ||
+    !SHA_256.test(viewerRequest?.targetSourceSha256 ?? '') ||
+    viewerRequest?.baselineSourceSha256 === viewerRequest?.targetSourceSha256
+  ) {
+    issues.push('viewer-request source hashes are invalid');
+  }
+  const robots = viewerRequest?.robots;
+  if (
+    robots?.path !== '/robots.txt' ||
+    JSON.stringify(robots?.methods) !== JSON.stringify(['GET', 'HEAD']) ||
+    robots?.statusCode !== 200 ||
+    robots?.contentType !== 'text/plain; charset=utf-8' ||
+    robots?.cacheControl !== 'public, max-age=86400' ||
+    robots?.getBody !== 'User-agent: *\nAllow: /\n'
+  ) {
+    issues.push('viewer-request robots contract is invalid');
+  }
+  const knownDrift = contract.driftPolicy?.known;
+  if (
+    knownDrift?.length !== 1 ||
+    knownDrift[0]?.logicalResourceId !== 'imageoptimization4C49F079' ||
+    knownDrift[0]?.propertyPath !== '/Environment/Variables/maxImageSize' ||
+    knownDrift[0]?.expectedValue !== '4700000' ||
+    knownDrift[0]?.actualValue !== '50000000'
+  ) {
+    issues.push('known image optimization drift allowlist is invalid');
+  }
+  const postPatchDrift = contract.driftPolicy?.afterViewerRequestPatch;
+  if (
+    postPatchDrift?.length !== 1 ||
+    postPatchDrift[0]?.logicalResourceId !==
+      viewerRequest?.cloudFormationLogicalId ||
+    postPatchDrift[0]?.propertyPath !== '/FunctionCode'
+  ) {
+    issues.push('viewer-request code drift allowlist is invalid');
   }
 
   return issues;
