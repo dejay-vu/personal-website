@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/dejay-vu/personal-website/compare/v0.2.0...v0.3.0) (2026-07-14)
+
+
+### Features
+
+* **seo:** strengthen identity, discovery, and image indexing ([#11](https://github.com/dejay-vu/personal-website/issues/11)) ([121679c](https://github.com/dejay-vu/personal-website/commit/121679c4641f3c18a95e5807a4d3045c20620bce))
+
+
+### Bug Fixes
+
+* **media:** resume interrupted edge publish ([#14](https://github.com/dejay-vu/personal-website/issues/14)) ([d92a208](https://github.com/dejay-vu/personal-website/commit/d92a2082e9db0f1ec84298d471c633ffa6cd75b7))
+* **media:** unwrap CloudFront test outputs ([#13](https://github.com/dejay-vu/personal-website/issues/13)) ([a381ac3](https://github.com/dejay-vu/personal-website/commit/a381ac33f6db3a7660f764a55e93792419fcfca8))
+
 ## [0.2.0](https://github.com/dejay-vu/personal-website/compare/v0.1.3...v0.2.0) (2026-07-14)
 
 
