@@ -71,11 +71,12 @@ export function NeonJunction({
       >
         {latestNotes.length > 0 && (
           <span className={styles.mqClip}>
-            <span className={styles.mq}>
+            <span className={styles.mq} data-venue-marquee="notes">
               {[0, 1].map((copy) => (
                 <span
                   key={copy}
                   className={styles.mqGroup}
+                  data-venue-marquee-group
                   aria-hidden={copy === 1 ? true : undefined}
                 >
                   {latestNotes.map((note, i) => (
@@ -105,12 +106,17 @@ export function NeonJunction({
       >
         <span className={styles.photoMqClip}>
           {latestPhotos.length > 0 && (
-            <span className={styles.photoMq} data-photo-marquee>
+            <span
+              className={styles.photoMq}
+              data-photo-marquee
+              data-venue-marquee="photos"
+            >
               {[0, 1].map((copy) => (
                 <span
                   key={copy}
                   className={styles.photoMqGroup}
                   data-photo-marquee-group
+                  data-venue-marquee-group
                   aria-hidden={copy === 1 ? true : undefined}
                 >
                   {latestPhotos.map((photo) => (
@@ -156,9 +162,22 @@ export function NeonJunction({
         onEnter={enter}
       >
         {featuredProject && (
-          <span className={styles.labLine}>
-            ON THE BENCH — <b>{featuredProject.name}</b> ·{' '}
-            {featuredProject.pitch}
+          <span className={styles.mqClip}>
+            <span className={styles.mq} data-venue-marquee="projects">
+              {[0, 1].map((copy) => (
+                <span
+                  key={copy}
+                  className={styles.mqGroup}
+                  data-venue-marquee-group
+                  aria-hidden={copy === 1 ? true : undefined}
+                >
+                  <span>
+                    ON THE BENCH — <b>{featuredProject.name}</b> ·{' '}
+                    {featuredProject.pitch}
+                  </span>
+                </span>
+              ))}
+            </span>
           </span>
         )}
       </Term>
@@ -199,7 +218,7 @@ function Term({
       <span className={styles.tname} data-vname>
         {name}
       </span>
-      <span className={styles.tcount}>
+      <span className={styles.tcount} data-term-cta>
         <span
           className={clsx(styles.tmeta, landing.holoEl)}
           data-holo-at={holoAt}
@@ -213,7 +232,7 @@ function Term({
           →
         </span>
       </span>
-      <span className={styles.tpre} aria-hidden="true">
+      <span className={styles.tpre} data-term-preview aria-hidden="true">
         <span className={styles.tpreIn}>{children}</span>
       </span>
     </RouteLink>

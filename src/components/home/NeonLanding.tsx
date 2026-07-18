@@ -9,7 +9,6 @@ import {
 import type { NoteListItem } from '@/modules/notes/types';
 import type { PhotoListItem } from '@/modules/photos/types';
 import type { ProjectListItem } from '@/modules/projects/types';
-import { useGSAP } from '@gsap/react';
 
 import { CjkDisplayFont, DisplayFont } from '@/styles/fonts';
 
@@ -27,7 +26,6 @@ import { NeonJunction } from './NeonJunction';
 import styles from './NeonLanding.module.css';
 import type { HoloHandle } from './neonHolo';
 import { startRain } from './neonRain';
-import { initNeonScroll } from './neonScroll';
 
 type NeonLandingProps = {
   // Previews live at the neon-spine junction (latest note titles run the
@@ -335,47 +333,126 @@ export function NeonLanding({
     return () => root.removeEventListener('click', onClick);
   }, []);
 
-  // The page as one projection, handed to GSAP: ScrollTriggers own the pin
-  // dwells (title assembly + content pops ride their progress) while a
-  // shared gsap.ticker owns the window-band signs (venues, CONTACT), the
-  // background pan, the HUD readout and the HOLO canvas feed. Pinning
-  // stays CSS sticky — see neonScroll.ts.
-  useGSAP(
-    () => {
-      const root = rootRef.current;
-      const bgImage = bgImageRef.current;
-      const rainNear = rainNearRef.current;
-      const heroTrack = heroTrackRef.current;
-      const heroCore = heroCoreRef.current;
-      const zone = zoneRef.current;
-      const contactSign = contactSignRef.current;
-      if (
-        !root ||
-        !bgImage ||
-        !rainNear ||
-        !heroTrack ||
-        !heroCore ||
-        !zone ||
-        !contactSign
-      ) {
+  // The projection engine is a desktop enhancement. Keep GSAP and
+  // ScrollTrigger out of the mobile request graph by importing the engine
+  // only while the complete desktop capability query matches.
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    const bgImage = bgImageRef.current;
+    const rainNear = rainNearRef.current;
+    const heroTrack = heroTrackRef.current;
+    const heroCore = heroCoreRef.current;
+    const zone = zoneRef.current;
+    const contactSign = contactSignRef.current;
+
+    const releaseStaticFallback = () => {
+      const documentRoot = document.documentElement;
+      documentRoot.removeAttribute('data-neon-fx');
+      documentRoot.style.removeProperty('--neon-bg-y');
+      bgImage?.style.removeProperty('transform');
+      try {
+        sessionStorage.removeItem('neonFx');
+      } catch {
+        /* storage disabled — best-effort */
+      }
+    };
+
+    if (
+      !root ||
+      !bgImage ||
+      !rainNear ||
+      !heroTrack ||
+      !heroCore ||
+      !zone ||
+      !contactSign
+    ) {
+      releaseStaticFallback();
+      return;
+    }
+
+    const desktopFx = window.matchMedia(DESKTOP_FX_MEDIA_QUERY);
+    let disposed = false;
+    let generation = 0;
+    let cleanup: (() => void) | null = null;
+    let fallbackTimer: number | undefined;
+
+    const stop = () => {
+      window.clearTimeout(fallbackTimer);
+      fallbackTimer = undefined;
+      cleanup?.();
+      cleanup = null;
+    };
+
+    const sync = () => {
+      generation += 1;
+      const currentGeneration = generation;
+      stop();
+
+      if (!desktopFx.matches) {
+        releaseStaticFallback();
         return;
       }
-      return initNeonScroll({
-        root,
-        bgImage,
-        rainNear,
-        heroTrack,
-        heroCore,
-        heroLetters: Array.from(
-          heroCore.querySelectorAll<HTMLElement>('.neon-wordmark__letter'),
-        ),
-        zone,
-        contactSign,
-        holo: holoRef,
-      });
-    },
-    { scope: rootRef },
-  );
+
+      // The pre-paint boot script may have restored the projection gate.
+      // Never leave the DOM hidden indefinitely on a slow or failed chunk.
+      fallbackTimer = window.setTimeout(() => {
+        if (
+          !disposed &&
+          currentGeneration === generation &&
+          desktopFx.matches
+        ) {
+          releaseStaticFallback();
+        }
+      }, 4_000);
+
+      import('./neonScroll')
+        .then(({ initNeonScroll }) => {
+          if (
+            disposed ||
+            currentGeneration !== generation ||
+            !desktopFx.matches
+          ) {
+            return;
+          }
+          window.clearTimeout(fallbackTimer);
+          fallbackTimer = undefined;
+          cleanup = initNeonScroll({
+            root,
+            bgImage,
+            rainNear,
+            heroTrack,
+            heroCore,
+            heroLetters: Array.from(
+              heroCore.querySelectorAll<HTMLElement>('.neon-wordmark__letter'),
+            ),
+            zone,
+            contactSign,
+            holo: holoRef,
+          });
+        })
+        .catch(() => {
+          if (
+            disposed ||
+            currentGeneration !== generation ||
+            !desktopFx.matches
+          ) {
+            return;
+          }
+          window.clearTimeout(fallbackTimer);
+          fallbackTimer = undefined;
+          releaseStaticFallback();
+        });
+    };
+
+    sync();
+    desktopFx.addEventListener('change', sync);
+    return () => {
+      disposed = true;
+      generation += 1;
+      desktopFx.removeEventListener('change', sync);
+      stop();
+    };
+  }, []);
 
   // The HOLO canvas is desktop-only. Coarse-pointer/mobile devices keep the
   // DOM titles in flow, eliminating the compositor-vs-main-thread lag that

@@ -6,7 +6,7 @@ export function Breadcrumbs({ items }: { items: readonly BreadcrumbItem[] }) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="mx-auto mb-6 w-full max-w-[calc(130ch+4rem)] font-mono text-[11px] uppercase tracking-[0.14em] text-(--neon-dim)"
+      className="mx-auto mb-6 w-full max-w-3xl font-mono text-[11px] uppercase tracking-[0.14em] text-(--neon-dim)"
       data-breadcrumbs
     >
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">

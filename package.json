@@ -77,7 +77,6 @@
     "@aws-sdk/lib-storage": "^3.1067.0",
     "@aws-sdk/s3-presigned-post": "^3.1067.0",
     "@aws-sdk/s3-request-presigner": "^3.1067.0",
-    "@gsap/react": "^2.1.2",
     "@heroui/react": "^3.1.0",
     "@heroui/styles": "^3.1.0",
     "@internationalized/date": "^3.12.2",

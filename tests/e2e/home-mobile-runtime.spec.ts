@@ -253,19 +253,81 @@ test('mobile titles stay in flow and the fixed HUD has no layout or hit region',
     }
   }
 
+  const outerGaps = await page.evaluate(() => {
+    const aboutContent = document.querySelector<HTMLElement>(
+      '#about [data-holo-at]',
+    );
+    const timelineTitle = document.querySelector<HTMLElement>(
+      '#timeline [data-sign]',
+    );
+    const timelineRows = document.querySelectorAll<HTMLElement>(
+      '#timeline [data-holo-at]',
+    );
+    const terms = document.querySelectorAll<HTMLElement>('[data-term]');
+    const notesTitle = terms[0]?.querySelector<HTMLElement>('[data-vname]');
+    const labPreview = terms[2]?.querySelector<HTMLElement>(
+      '[data-term-preview]',
+    );
+    const contactTitle = document.querySelector<HTMLElement>(
+      '#contact [data-sign]',
+    );
+    const timelineContent = timelineRows[timelineRows.length - 1];
+    if (
+      !aboutContent ||
+      !timelineTitle ||
+      !timelineContent ||
+      !notesTitle ||
+      !labPreview ||
+      !contactTitle
+    ) {
+      throw new Error('Projection-run outer geometry unavailable');
+    }
+
+    return [
+      timelineTitle.getBoundingClientRect().top -
+        aboutContent.getBoundingClientRect().bottom,
+      notesTitle.getBoundingClientRect().top -
+        timelineContent.getBoundingClientRect().bottom,
+      contactTitle.getBoundingClientRect().top -
+        labPreview.getBoundingClientRect().bottom,
+    ];
+  });
+  for (const gap of outerGaps.slice(1)) {
+    expect(Math.abs(gap - outerGaps[0])).toBeLessThanOrEqual(1);
+  }
+
   await page.locator('#street').scrollIntoViewIfNeeded();
   for (const term of await page.locator('[data-term]').all()) {
     const rows = await term.evaluate((node) => {
       const name = node.querySelector<HTMLElement>('[data-vname]');
-      const cue =
-        node.querySelector<HTMLElement>('[data-ready-cue]')?.parentElement;
-      if (!name || !cue) throw new Error('Venue row geometry unavailable');
+      const cta = node.querySelector<HTMLElement>('[data-term-cta]');
+      const preview = node.querySelector<HTMLElement>('[data-term-preview]');
+      if (!name || !cta || !preview) {
+        throw new Error('Venue row geometry unavailable');
+      }
       const nameRect = name.getBoundingClientRect();
-      const cueRect = cue.getBoundingClientRect();
-      return { cueTop: cueRect.top, nameBottom: nameRect.bottom };
+      const ctaRect = cta.getBoundingClientRect();
+      const previewRect = preview.getBoundingClientRect();
+      return {
+        ctaDisplay: getComputedStyle(cta).display,
+        ctaHeight: ctaRect.height,
+        ctaWidth: ctaRect.width,
+        gridRows: getComputedStyle(node).gridTemplateRows.split(' ').length,
+        nameBottom: nameRect.bottom,
+        previewTop: previewRect.top,
+      };
     });
-    expect(rows.cueTop).toBeGreaterThanOrEqual(rows.nameBottom);
+    expect(rows.ctaDisplay).toBe('none');
+    expect(rows.ctaHeight).toBe(0);
+    expect(rows.ctaWidth).toBe(0);
+    expect(rows.gridRows).toBe(2);
+    expect(rows.previewTop).toBeGreaterThanOrEqual(rows.nameBottom);
   }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    ),
+  ).toBeLessThanOrEqual(1);
 
   await page.evaluate(() => document.getElementById('home')?.scrollIntoView());
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeLessThan(16);

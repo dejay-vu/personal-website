@@ -152,13 +152,14 @@ test('touch/mobile exposes one selectable, interactive DOM projection', async ({
     expect(
       await term.evaluate((node) => getComputedStyle(node).pointerEvents),
     ).toBe('auto');
-    await expect(term.locator('[data-ready-cue]')).toBeVisible();
+    await expect(term.locator('[data-term-cta]')).toBeHidden();
+    await expect(term.locator('[data-ready-cue]')).toBeHidden();
   }
 });
 
 test('reduced motion exposes the visible static fallback immediately', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
 
@@ -175,18 +176,23 @@ test('reduced motion exposes the visible static fallback immediately', async ({
     expect(
       await term.evaluate((node) => getComputedStyle(node).pointerEvents),
     ).toBe('auto');
-    await expect(term.locator('[data-ready-cue]')).toBeVisible();
-    expect(
-      await term
-        .locator('[data-ready-cue]')
-        .evaluate((node) =>
-          Number(getComputedStyle(node.parentElement!).opacity),
-        ),
-    ).toBeGreaterThan(0.9);
+    const cta = term.locator('[data-term-cta]');
+    if (testInfo.project.name === 'mobile-chromium') {
+      await expect(cta).toBeHidden();
+      await expect(term.locator('[data-ready-cue]')).toBeHidden();
+    } else {
+      await expect(cta).toBeVisible();
+      await expect(term.locator('[data-ready-cue]')).toBeVisible();
+      expect(
+        await cta.evaluate((node) => Number(getComputedStyle(node).opacity)),
+      ).toBeGreaterThan(0.9);
+    }
   }
 });
 
-test('canvas failure releases a restored projection gate', async ({ page }) => {
+test('canvas failure releases a restored projection gate', async ({
+  page,
+}, testInfo) => {
   await page.addInitScript(() => {
     HTMLCanvasElement.prototype.getContext = () => null;
     sessionStorage.setItem('neonFx', '1');
@@ -201,6 +207,12 @@ test('canvas failure releases a restored projection gate', async ({ page }) => {
     expect(
       await term.evaluate((node) => getComputedStyle(node).pointerEvents),
     ).toBe('auto');
-    await expect(term.locator('[data-ready-cue]')).toBeVisible();
+    if (testInfo.project.name === 'mobile-chromium') {
+      await expect(term.locator('[data-term-cta]')).toBeHidden();
+      await expect(term.locator('[data-ready-cue]')).toBeHidden();
+    } else {
+      await expect(term.locator('[data-term-cta]')).toBeVisible();
+      await expect(term.locator('[data-ready-cue]')).toBeVisible();
+    }
   }
 });
