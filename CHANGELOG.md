@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/dejay-vu/personal-website/compare/v0.3.0...v0.3.1) (2026-07-18)
+
+
+### Performance Improvements
+
+* optimize homepage runtime and layout ([#15](https://github.com/dejay-vu/personal-website/issues/15)) ([14bb89b](https://github.com/dejay-vu/personal-website/commit/14bb89bdb06e402f9c980e0ad23118a12891db80))
+
 ## [0.3.0](https://github.com/dejay-vu/personal-website/compare/v0.2.0...v0.3.0) (2026-07-14)
 
 
