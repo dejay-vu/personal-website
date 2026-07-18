@@ -17,6 +17,9 @@
   --neon-line: rgba(154, 134, 192, 0.18);
   /* the content offset inside the zone (NeonJunction reads this too) */
   --zone-pad: clamp(78px, 11vw, 112px);
+  /* One shared mobile rhythm for every projection-run section, including
+     NeonJunction (which inherits this custom property through the zone). */
+  --mobile-section-pad: clamp(56px, 13vw, 88px);
 
   position: relative;
   min-height: 100svh;
@@ -370,7 +373,7 @@
     display: block;
   }
   .blk {
-    padding-block: clamp(56px, 13vw, 88px);
+    padding-block: var(--mobile-section-pad);
     scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 64px);
   }
 }

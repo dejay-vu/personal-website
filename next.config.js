@@ -144,6 +144,9 @@ module.exports = withSentryConfig(nextConfig, {
   org: 'dejayvu',
   project: 'sentry-claret-clock',
 
+  // Client tracing is intentionally disabled in instrumentation-client.ts.
+  suppressOnRouterTransitionStartWarning: true,
+
   // Only print source-map upload logs in CI.
   silent: !process.env.CI,
 
@@ -157,7 +160,9 @@ module.exports = withSentryConfig(nextConfig, {
     // Auto-instrument Vercel Cron Monitors.
     automaticVercelMonitors: true,
 
-    // Strip Sentry debug logging from the client bundle.
+    // Strip Sentry debug logging from webpack builds. Client tracing is
+    // disabled at runtime in instrumentation-client.ts so server and edge
+    // tracing remain available under Turbopack.
     treeshake: {
       removeDebugLogging: true,
     },

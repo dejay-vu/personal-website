@@ -758,7 +758,7 @@ export function initNeonScroll(els: NeonScrollElements): () => void {
       // the geometry authority by the time we read them.
       ScrollTrigger.addEventListener('refresh', onRefresh);
       ScrollTrigger.refresh();
-      // One synchronous tick before paint (useGSAP runs in a layout effect):
+      // One synchronous tick before paint (the loader runs in a layout effect):
       // seeds the parallax snap, the content-pop states and the HUD readout
       // for the CURRENT scroll, so a refresh at a scrolled position doesn't
       // flash "SECTOR — STANDBY" or an unpopped section for a frame.

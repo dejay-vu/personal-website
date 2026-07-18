@@ -71,7 +71,10 @@ export function PhotoDetail({ photo }: { photo: PhotoDetailModel }) {
             className="h-auto max-h-full w-auto max-w-full rounded-lg object-contain shadow-[0_0_50px_color-mix(in_srgb,var(--beam)_14%,transparent)] ring-1 ring-(--beam)/20"
           />
         </div>
-        <figcaption className="absolute inset-x-0 bottom-0 flex flex-col gap-2 text-center">
+        <figcaption
+          className="absolute inset-x-0 bottom-0 mx-auto flex w-full max-w-3xl flex-col gap-2 text-center"
+          data-photo-detail-content
+        >
           <PhotoCaption
             photo={photo}
             as="h1"

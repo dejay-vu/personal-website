@@ -2,7 +2,7 @@ import type { ListObjectsV2CommandInput } from '@aws-sdk/client-s3';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { handleAwsHealthRequest } from '../../src/app/api/admin/aws-health/route';
+import { handleAwsHealthRequest } from '../../src/app/api/admin/aws-health/handler';
 import {
   type AwsRuntimeHealthProbe,
   checkAwsRuntimeHealth,

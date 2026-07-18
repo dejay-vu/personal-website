@@ -24,8 +24,9 @@ export function NoteArticle({
 
   return (
     <article
+      data-note-content
       className={clsx(
-        'neon-prose prose dark:prose-invert m-auto',
+        'neon-prose prose dark:prose-invert m-auto max-w-3xl',
         'md:prose-lg lg:prose-xl',
         'prose-img:rounded-lg prose-pre:p-0',
         'prose-headings:text-foreground prose-headings:font-bold',

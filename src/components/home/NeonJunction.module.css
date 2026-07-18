@@ -326,26 +326,6 @@
   object-fit: cover;
 }
 
-/* The Lab: the newest instrument on the bench — same mono material as the
-   Field Notes marquee line, but static (one project needs no loop) and
-   truncating instead of overflowing the row. */
-.labLine {
-  flex: 1;
-  min-width: 0;
-  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--neon-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.labLine b {
-  color: #fff;
-  font-weight: 600;
-}
-
 /* Touch lays previews out at their final height from the first frame. This
    prevents a mid-scroll row expansion from changing document height. */
 @media (max-width: 720px), (hover: none), (pointer: coarse) {
@@ -366,7 +346,7 @@
 @media (max-width: 720px), (hover: none), (pointer: coarse) {
   .term {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
+    grid-template-rows: auto auto;
     gap: 8px 0;
     transition: none;
   }
@@ -375,27 +355,25 @@
     grid-row: 1;
   }
   .tcount {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: start;
-  }
-  .tmeta {
     display: none;
   }
   .tpre {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
   }
   .junction {
+    padding-block: var(--mobile-section-pad);
     scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 64px);
+  }
+  .term:first-of-type {
+    padding-top: 0;
+  }
+  .term:last-of-type {
+    padding-bottom: 0;
   }
   .mq,
   .photoMq {
-    animation: none;
-  }
-  .mqGroup[aria-hidden='true'],
-  .photoMqGroup[aria-hidden='true'] {
-    display: none;
+    animation-play-state: running;
   }
 }
 
@@ -410,8 +388,7 @@
   }
 
   .tcount {
-    display: flex;
-    font-size: 10px;
+    display: none;
   }
 }
 
@@ -430,6 +407,7 @@
     animation: none;
   }
 
+  .mqGroup[aria-hidden='true'],
   .photoMqGroup[aria-hidden='true'] {
     display: none;
   }

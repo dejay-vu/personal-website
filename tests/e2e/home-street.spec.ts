@@ -106,7 +106,8 @@ test('Darkroom uses a unique sequence with two seamless thumbnail groups', async
   if (mobile) {
     expect(
       await marquee.evaluate((node) => getComputedStyle(node).animationName),
-    ).toBe('none');
+    ).not.toBe('none');
+    expect(idleState).toBe('running');
   } else {
     expect(idleState).toBe('paused');
     await darkroom.hover();
@@ -199,28 +200,75 @@ test('Darkroom uses a unique sequence with two seamless thumbnail groups', async
   }
 });
 
-test('Darkroom marquee is static on touch and under reduced motion', async ({
+test('all venue marquees share desktop interaction and mobile autoplay', async ({
   page,
 }, testInfo) => {
-  if (testInfo.project.name === 'mobile-chromium') {
-    await page.goto('/');
-    await projectStreet(page, true);
-    const marquee = page.locator('[data-photo-marquee]');
+  await page.goto('/');
+  const mobile = testInfo.project.name === 'mobile-chromium';
+  await projectStreet(page, mobile);
+
+  const marquees = page.locator('[data-venue-marquee]');
+  await expect(marquees).toHaveCount(3);
+
+  for (let index = 0; index < 3; index += 1) {
+    const marquee = marquees.nth(index);
+    const groups = marquee.locator('[data-venue-marquee-group]');
+    await expect(groups).toHaveCount(2);
+    await expect(groups.nth(1)).toHaveAttribute('aria-hidden', 'true');
+
+    expect(
+      await marquee.evaluate((node) => getComputedStyle(node).animationName),
+    ).not.toBe('none');
+
+    if (mobile) {
+      expect(
+        await marquee.evaluate(
+          (node) => getComputedStyle(node).animationPlayState,
+        ),
+      ).toBe('running');
+      await expect(groups.nth(1)).toBeVisible();
+      continue;
+    }
+
+    const term = page.locator('[data-term]').nth(index);
+    expect(
+      await marquee.evaluate(
+        (node) => getComputedStyle(node).animationPlayState,
+      ),
+    ).toBe('paused');
+    await term.hover();
+    expect(
+      await marquee.evaluate(
+        (node) => getComputedStyle(node).animationPlayState,
+      ),
+    ).toBe('running');
+    await page.mouse.move(0, 0);
+    await term.focus();
+    expect(
+      await marquee.evaluate(
+        (node) => getComputedStyle(node).animationPlayState,
+      ),
+    ).toBe('running');
+  }
+});
+
+test('all venue marquees are static under reduced motion', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('#street').scrollIntoViewIfNeeded();
+
+  const marquees = page.locator('[data-venue-marquee]');
+  await expect(marquees).toHaveCount(3);
+
+  for (let index = 0; index < 3; index += 1) {
+    const marquee = marquees.nth(index);
+    const groups = marquee.locator('[data-venue-marquee-group]');
+    await expect(groups).toHaveCount(2);
+    await expect(groups.nth(0)).toBeVisible();
+    await expect(groups.nth(1)).toBeHidden();
+
     expect(
       await marquee.evaluate((node) => getComputedStyle(node).animationName),
     ).toBe('none');
-  } else {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
   }
-
-  const groups = page.locator('[data-photo-marquee-group]');
-  await expect(groups).toHaveCount(2);
-  await expect(groups.nth(0)).toBeVisible();
-  await expect(groups.nth(1)).toBeHidden();
-  expect(
-    await page
-      .locator('[data-photo-marquee]')
-      .evaluate((node) => getComputedStyle(node).animationName),
-  ).toBe('none');
 });
