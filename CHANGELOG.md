@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/dejay-vu/personal-website/compare/v0.3.1...v0.3.2) (2026-07-24)
+
+
+### Bug Fixes
+
+* **infra:** skip Vercel previews for automation branches ([#21](https://github.com/dejay-vu/personal-website/issues/21)) ([f453658](https://github.com/dejay-vu/personal-website/commit/f453658efc5c64202187a380370bc1c96c1afa2e))
+
 ## [0.3.1](https://github.com/dejay-vu/personal-website/compare/v0.3.0...v0.3.1) (2026-07-18)
 
 
