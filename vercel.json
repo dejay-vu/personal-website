@@ -3,10 +3,11 @@
   "buildCommand": "corepack npm run build",
   "git": {
     "deploymentEnabled": {
+      "agent/**": false,
       "build/*": false,
       "chore/*": false,
       "ci/*": false,
-      "dependabot/*": false,
+      "dependabot/**": false,
       "docs/*": false,
       "feat/*": false,
       "fix/*": false,

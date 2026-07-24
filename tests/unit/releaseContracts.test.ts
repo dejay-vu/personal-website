@@ -181,16 +181,17 @@ test('nested tool entrypoints preserve the pinned npm version', () => {
   assert.equal(vercel.buildCommand, 'corepack npm run build');
 });
 
-test('Vercel deploys main while conventional short-lived branches stay CI-only', () => {
+test('Vercel deploys main while short-lived automation branches stay CI-only', () => {
   const vercel = json<{
     git?: { deploymentEnabled?: Record<string, boolean> };
   }>('vercel.json');
 
   assert.deepEqual(vercel.git?.deploymentEnabled, {
+    'agent/**': false,
     'build/*': false,
     'chore/*': false,
     'ci/*': false,
-    'dependabot/*': false,
+    'dependabot/**': false,
     'docs/*': false,
     'feat/*': false,
     'fix/*': false,
