@@ -89,7 +89,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "clsx": "^2.1.1",
-    "exifreader": "^4.41.0",
+    "exifreader": "^4.41.1",
     "gsap": "^3.15.0",
     "next": "^16.2.11",
     "next-auth": "^4.24.15",
