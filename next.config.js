@@ -138,7 +138,7 @@ const nextConfig = {
 // maps at build time. Browser events are tunnelled through `/monitoring`
 // (same-origin), so the strict CSP above needs no Sentry ingest origin and
 // ad-blockers can't drop client-side reports.
-const { withSentryConfig } = require('@sentry/nextjs');
+const { withSentryConfig } = require('@sentry/nextjs/config');
 
 module.exports = withSentryConfig(nextConfig, {
   org: 'dejayvu',
