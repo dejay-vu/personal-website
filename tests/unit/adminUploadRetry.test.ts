@@ -47,6 +47,23 @@ test('unique constraint classification only treats the slug target as retryable'
   assert.equal(isPrismaUniqueConstraintOn(storageConflict, 'slug'), false);
 });
 
+test('unique constraint classification reads driver adapter fields', () => {
+  const conflictOn = (fields: string[]) => ({
+    code: 'P2002',
+    meta: {
+      driverAdapterError: {
+        cause: { constraint: { fields } },
+      },
+    },
+  });
+
+  assert.equal(isPrismaUniqueConstraintOn(conflictOn(['slug']), 'slug'), true);
+  assert.equal(
+    isPrismaUniqueConstraintOn(conflictOn(['originalKey']), 'slug'),
+    false,
+  );
+});
+
 test('note and photo create routes synchronously preflight before queuing work', () => {
   for (const route of [
     'src/app/api/admin/notes/editor/route.ts',

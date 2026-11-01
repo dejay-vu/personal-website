@@ -4,6 +4,12 @@ import { VENUES } from '@/config/venues';
 import { publishedNoteExists } from '@/modules/notes/read';
 import { publicPhotoExists } from '@/modules/photos/read';
 
+import { existsUnlessConfirmedMissing } from '@/lib/existenceCheck';
+
+// Vercel runs this file near the visitor, not in the function region, so a new
+// database connection can be slow. It only upgrades misses to a hard 404.
+const EXISTENCE_CHECK_BUDGET_MS = 1_000;
+
 const itemSlug = (pathname: string, venuePath: string) => {
   const prefix = `${venuePath}/`;
   if (!pathname.startsWith(prefix)) return null;
@@ -27,7 +33,12 @@ async function publicItemExists(pathname: string) {
 }
 
 export async function proxy(request: NextRequest) {
-  if (await publicItemExists(request.nextUrl.pathname)) {
+  const exists = await existsUnlessConfirmedMissing(
+    () => publicItemExists(request.nextUrl.pathname),
+    { budgetMs: EXISTENCE_CHECK_BUDGET_MS },
+  );
+
+  if (exists) {
     return NextResponse.next();
   }
 

@@ -37,10 +37,18 @@ export function isPrismaUniqueConstraintError(error: unknown) {
   );
 }
 
+type PrismaUniqueConstraintMeta = {
+  driverAdapterError?: { cause?: { constraint?: { fields?: unknown } } };
+  target?: unknown;
+};
+
 export function isPrismaUniqueConstraintOn(error: unknown, field: string) {
   if (!isPrismaUniqueConstraintError(error)) return false;
 
-  const target = (error as { meta?: { target?: unknown } }).meta?.target;
+  const { meta } = error as { meta?: PrismaUniqueConstraintMeta };
+  // Driver adapters report the fields under driverAdapterError, not target.
+  const target =
+    meta?.target ?? meta?.driverAdapterError?.cause?.constraint?.fields;
 
   if (Array.isArray(target)) return target.includes(field);
   if (typeof target === 'string') return target.includes(field);

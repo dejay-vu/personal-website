@@ -4,7 +4,10 @@ import test from 'node:test';
 
 import { AdminUploadStatus } from '../../src/generated/prisma/client';
 import prisma from '../../src/lib/prisma';
-import { AdminDomainError } from '../../src/modules/admin/errors';
+import {
+  AdminDomainError,
+  isPrismaUniqueConstraintOn,
+} from '../../src/modules/admin/errors';
 import { getUploadStatuses } from '../../src/modules/admin/uploads';
 import { buildNoteCoverOriginalKey } from '../../src/modules/media/storageKeys';
 import {
@@ -181,6 +184,15 @@ test('note preflight rejects an occupied normalized slug before upload', async (
       error instanceof AdminDomainError &&
       error.status === 409 &&
       error.message === 'Note slug already exists: occupied-note',
+  );
+});
+
+test('a real driver unique violation is classified by its slug field', async () => {
+  await seedNote({ slug: 'occupied-note', content: '# Occupied' });
+
+  await assert.rejects(
+    () => seedNote({ slug: 'occupied-note', content: '# Duplicate' }),
+    (error: unknown) => isPrismaUniqueConstraintOn(error, 'slug'),
   );
 });
 
