@@ -1,6 +1,10 @@
 import { after } from 'next/server';
 
-import { AdminUploadKind, AdminUploadStatus } from '@/generated/prisma/client';
+import {
+  AdminUploadKind,
+  AdminUploadStatus,
+  Prisma,
+} from '@/generated/prisma/client';
 import { buildStagingKey } from '@/modules/media/storageKeys';
 import { createHash, randomUUID } from 'crypto';
 
@@ -179,29 +183,8 @@ export async function getUploadIntent({
   return intent;
 }
 
-type UploadIntentTransactionClient = {
-  adminUploadIntent: {
-    updateMany(args: {
-      data: {
-        error: null;
-        finalKey: string;
-        finalizedAt: Date;
-        sha256: string;
-        status: AdminUploadStatus;
-      };
-      where: {
-        githubId: string;
-        id: string;
-        kind: AdminUploadKind;
-        status: AdminUploadStatus;
-        uploadId: string;
-      };
-    }): PromiseLike<{ count: number }>;
-  };
-};
-
 export async function finalizeUploadIntent(
-  transaction: UploadIntentTransactionClient,
+  transaction: Prisma.TransactionClient,
   {
     finalKey,
     githubId,
