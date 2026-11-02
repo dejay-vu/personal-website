@@ -10,19 +10,8 @@ export type AdminAuditInput = {
   targetType: 'note' | 'photo';
 };
 
-// Prisma Accelerate wraps transaction clients with extension-specific generic
-// delegates. This is the exact transaction capability the audit module needs,
-// and both generated and extended transaction clients satisfy it.
-export type AdminAuditTransactionClient = {
-  adminAuditLog: {
-    create(args: {
-      data: Prisma.AdminAuditLogCreateInput;
-    }): PromiseLike<unknown>;
-  };
-};
-
 export async function writeAdminAudit(
-  transaction: AdminAuditTransactionClient,
+  transaction: Prisma.TransactionClient,
   {
     action,
     githubId,
